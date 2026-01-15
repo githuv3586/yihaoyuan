@@ -1,0 +1,46 @@
+{
+  "name": "@your-org/utils-library",
+  "version": "1.0.0",
+  "description": "一个功能完整的 TypeScript/React 工具库，包含工具函数、HTTP 客户端、React 组件和自定义 Hooks",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts,.tsx",
+    "format": "prettier --write src/**/*.{ts,tsx}",
+    "docs": "typedoc --out docs/generated src/index.ts"
+  },
+  "keywords": [
+    "typescript",
+    "react",
+    "utils",
+    "components",
+    "hooks",
+    "http-client"
+  ],
+  "author": "Your Organization",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "react-dom": ">=17.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/utils-library.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/utils-library/issues"
+  },
+  "homepage": "https://github.com/your-org/utils-library#readme"
+}
