@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "design-bot"
+version = "0.1.0"
+description = "AI 驱动的 UI/UX 设计智能助手 — 复刻自 cnbnn/ui-ux-pro-max"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Design Bot Replica" }]
+keywords = ["ui", "ux", "design-system", "ai", "bm25", "design"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: User Interfaces",
+]
+dependencies = []
+
+[project.optional-dependencies]
+server = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "pydantic>=2.0"]
+preview = ["playwright>=1.40", "Pillow>=10.0"]
+dev = ["pytest>=7.0", "ruff>=0.4"]
+
+[project.scripts]
+design-bot = "design_bot.cli:main"
+design-bot-server = "design_bot.server:main"
+
+[project.urls]
+Homepage = "https://github.com/"
+Source = "https://github.com/"
+"Original Project" = "https://cnb.cool/cnbnn/ui-ux-pro-max"
+
+[tool.setuptools]
+packages = ["design_bot"]
+
+[tool.setuptools.package-data]
+design_bot = ["data/*.csv", "data/stacks/*.csv"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
