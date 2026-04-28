@@ -8,17 +8,21 @@
 
 ```
 docs/
-  └── OPENCLAW_INSTALL_PREP_CN.md   # 一页清单 + 详细说明 + 常见坑
+  ├── OPENCLAW_INSTALL_PREP_CN.md   # 装机前一页清单 + 常见坑
+  ├── OPENCLAW_INSTALL_LOG.md       # VM 实测装机日志（事实依据）
+  └── MODEL_CONFIGURATION_CN.md     # 大模型配置手册（GLM / Z.AI 4 端点）
 
 scripts/
   ├── preflight-check.sh            # Linux/macOS 预飞自检（必跑）
   ├── preflight-check.ps1           # Windows PowerShell 预飞自检
-  ├── setup-env.sh                  # Linux/macOS 一键准备 nvm/Node22/pnpm + 镜像
-  └── smoke-test.mjs                # GLM-5-Turbo Coding 端点流式联通测试
+  ├── setup-env.sh                  # Linux/macOS 一键备 nvm/Node22/pnpm + 镜像
+  ├── smoke-test.mjs                # GLM Coding 端点流式联通测试
+  ├── install-openclaw.sh           # 装机包装器（先 preflight、后官方 install.sh）
+  └── configure-zai-coding-cn.sh    # 非交互式配大模型（4 端点 + SecretRef）
 
 templates/
   ├── openclaw.env.template         # ~/.openclaw/.env 模板
-  └── openclaw.json.template        # ~/.openclaw/openclaw.json 模板
+  └── openclaw.json.template        # ~/.openclaw/openclaw.json 模板（schema-valid）
 ```
 
 ## 快速开始（Linux / macOS）
@@ -42,9 +46,21 @@ node scripts/smoke-test.mjs
 # 4) 全量预飞自检
 bash scripts/preflight-check.sh
 
-# 全 ✔ 后正式安装
-curl -fsSL https://openclaw.ai/install.sh | bash
+# 5) 装 OpenClaw（包装器：先预飞、再调官方脚本、带重试）
+bash scripts/install-openclaw.sh
+
+# 6) 非交互式配大模型（默认 GLM Coding-Plan-CN + SecretRef 安全模式）
+bash scripts/configure-zai-coding-cn.sh
+
+# 7) 自检 + 进入聊天
+openclaw doctor --non-interactive
+openclaw chat
 ```
+
+详见：
+
+- 装机：[`docs/OPENCLAW_INSTALL_PREP_CN.md`](docs/OPENCLAW_INSTALL_PREP_CN.md) + [`docs/OPENCLAW_INSTALL_LOG.md`](docs/OPENCLAW_INSTALL_LOG.md)
+- 配大模型：[`docs/MODEL_CONFIGURATION_CN.md`](docs/MODEL_CONFIGURATION_CN.md)
 
 ## 快速开始（Windows）
 

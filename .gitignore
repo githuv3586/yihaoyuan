@@ -1,0 +1,5 @@
+# OpenClaw 本地状态 / 凭证
+.openclaw/
+**/openclaw.json.bak
+**/.env
+install-logs/
