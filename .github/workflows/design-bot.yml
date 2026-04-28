@@ -1,0 +1,39 @@
+name: Design Bot
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  reply:
+    if: contains(github.event.comment.body, '@design-bot')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Run Design Bot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DESIGN_BOT_PREVIEW_PATH: design-preview.html
+        run: python -m design_bot.bot
+
+      - name: Upload HTML preview
+        if: hashFiles('design-preview.html') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: design-preview
+          path: design-preview.html
+          retention-days: 14
