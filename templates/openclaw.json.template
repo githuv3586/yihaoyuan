@@ -1,0 +1,79 @@
+{
+  "$schema": "https://openclaw.ai/schemas/openclaw.json",
+  "version": 1,
+
+  "models": {
+    "primary": {
+      "provider": "zai",
+      "model": "${ZAI_MODEL:-glm-5-turbo}",
+      "apiKey": "${ZAI_API_KEY}",
+      "baseUrl": "${ZAI_BASE_URL:-https://open.bigmodel.cn/api/coding/paas/v4}",
+      "stream": true,
+      "firstTokenTimeoutMs": 8000,
+      "totalTimeoutMs": 60000,
+      "temperature": 0.6
+    },
+    "fallbacks": [
+      {
+        "provider": "zai",
+        "model": "glm-4.5-air",
+        "apiKey": "${ZAI_API_KEY}",
+        "baseUrl": "${ZAI_BASE_URL:-https://open.bigmodel.cn/api/coding/paas/v4}"
+      }
+    ]
+  },
+
+  "channels": {
+    "weixin": {
+      "kind": "ilink",
+      "accountId": "${WEIXIN_ACCOUNT_ID}",
+      "token": "${WEIXIN_TOKEN}",
+      "sendPolicy": {
+        "minIntervalMs": 800,
+        "maxChunkChars": 480,
+        "typing": true,
+        "dedupWindowMs": 60000
+      },
+      "dm":   { "policy": "${WEIXIN_DM_POLICY:-open}" },
+      "group": {
+        "policy": "${WEIXIN_GROUP_POLICY:-allowlist}",
+        "allowedUsers": "${WEIXIN_GROUP_ALLOWED_USERS}"
+      }
+    }
+  },
+
+  "agent": {
+    "autonomyLevel": "${OPENCLAW_AUTONOMY_LEVEL:-3}",
+    "budget": {
+      "tokens": "${OPENCLAW_BUDGET_TOKENS:-50000}",
+      "timeMs": "${OPENCLAW_BUDGET_TIME_MS:-300000}"
+    },
+    "sandbox": {
+      "workspaceRoot": "~/.openclaw/workspace",
+      "allowNetwork": false,
+      "allowShell": false
+    },
+    "memory": {
+      "path": "~/.openclaw/memory.db",
+      "fts5": true
+    },
+    "trace": {
+      "dir": "~/.openclaw/traces",
+      "enabled": true
+    }
+  },
+
+  "cache": {
+    "l1": { "enabled": "${OPENCLAW_CACHE_L1:-true}", "maxItems": 1000 },
+    "l2": { "enabled": "${OPENCLAW_CACHE_L2:-true}", "ttlSec": 86400 },
+    "promptCache": true
+  },
+
+  "logging": {
+    "level": "${OPENCLAW_LOG_LEVEL:-info}",
+    "dir": "~/.openclaw/logs",
+    "audit": "~/.openclaw/audit"
+  },
+
+  "admins": "${OPENCLAW_ADMINS}"
+}
