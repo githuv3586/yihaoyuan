@@ -1,0 +1,149 @@
+From 17db5ae7a8923c26e943045644f93f4d2183fcb9 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Wed, 29 Apr 2026 02:45:50 +0000
+Subject: [PATCH] =?UTF-8?q?fix(video):=20URL=20=E7=99=BD=E5=90=8D=E5=8D=95?=
+ =?UTF-8?q?=20+=20=E7=BB=88=E6=80=81=E7=BC=93=E5=AD=98=20+=20audio=20?=
+ =?UTF-8?q?=E5=85=BC=E5=AE=B9=20+=20error=5Fmsg=20=E6=88=AA=E6=96=AD?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+复审 PR #4 后修复 1 处 P0 + 3 处 P1：
+
+1. [P0 安全] firstFrame / lastFrame URL 加 http(s) 协议白名单 +
+   长度 ≤ 2048 校验。避免 data:/file:/javascript: 等非法协议
+   被透传给方舟，同时防止超长 URL 写入 video_tasks 造成存储放大。
+   非法 URL 显式 400 拒绝，而不是悄悄忽略。
+
+2. [P1] 已终态任务缓存命中条件去掉 doc.video_url 限制。
+   原条件 'TERMINAL && video_url' 实际只命中 succeeded：
+   failed / expired / cancelled 通常没有 video_url，导致客户端
+   每次刷新都重复请求方舟（方舟侧任务也已清理，徒劳）。
+   现在所有终态都直接走缓存。
+
+3. [P1] generate_audio 增加模型兼容校验，仅 doubao-seedance-1-5-*
+   系列才透传，否则静默忽略。避免在 1.0 Pro Fast 默认模型上
+   传 generateAudio=true 时方舟报错、用户配额已扣（配额含失败）。
+
+4. [P1] handleVideoStatus 返回时 error_msg 与写库口径一致，
+   统一 .slice(0, 500)。原代码写库截断了 500 字，但响应未截断，
+   方舟返回多 KB 堆栈时会撑爆响应体。
+
+附带：
+- 抽取 VIDEO_TERMINAL_STATUS / AUDIO_SUPPORTED_MODEL / isSafeImageUrl
+  常量与工具函数，避免硬编码字符串数组散落两处。
+- node --check 通过。
+---
+ cloudfunctions/ui-ux-bot/index.js | 48 ++++++++++++++++++++++++-------
+ 1 file changed, 38 insertions(+), 10 deletions(-)
+
+diff --git a/cloudfunctions/ui-ux-bot/index.js b/cloudfunctions/ui-ux-bot/index.js
+index 27fd19d..8a4c2fb 100644
+--- a/cloudfunctions/ui-ux-bot/index.js
++++ b/cloudfunctions/ui-ux-bot/index.js
+@@ -552,6 +552,18 @@ async function handleUsage(event, openid) {
+ 
+ const VIDEO_RATIOS = ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9', 'adaptive']
+ const VIDEO_RESOLUTIONS = ['480p', '720p', '1080p']
++// 终态状态集中常量化，避免 status 缓存判断条件遗漏（如 failed/expired 也是终态）
++const VIDEO_TERMINAL_STATUS = ['succeeded', 'failed', 'expired', 'cancelled']
++// 仅 1.5 系列支持 generate_audio；用前缀匹配，避免 model 后缀变化（251215 等）漏判
++const AUDIO_SUPPORTED_MODEL = /^doubao-seedance-1-5/i
++// 首帧 / 尾帧图 URL 校验：仅允许 http(s) 协议、长度 ≤ 2048
++// 防止 data:/file:/javascript: 等协议绕过 + 防止超长 URL 写入数据库造成存储放大
++function isSafeImageUrl(u) {
++  return typeof u === 'string'
++    && u.length > 0
++    && u.length <= 2048
++    && /^https?:\/\//i.test(u)
++}
+ 
+ // 估算视频费用（元）。video_url 有效期短，记录留存仅供报表参考。
+ function calcVideoCost(model, resolution, duration) {
+@@ -569,9 +581,18 @@ function buildVideoPayload(event) {
+   if (typeof prompt !== 'string') prompt = ''
+   prompt = prompt.trim()
+ 
+-  const hasImage = typeof firstFrame === 'string' && firstFrame
++  // 严格校验首/尾帧 URL：拒绝 data:/file:/javascript: 等非 http(s) 协议，
++  // 同时限制长度 ≤ 2048，避免攻击者塞入超长字符串放大 video_tasks 存储。
++  const hasImage = isSafeImageUrl(firstFrame)
++  const hasLast = isSafeImageUrl(lastFrame)
+   if (!prompt && !hasImage) {
+-    return { ok: false, code: 400, message: '请输入视频描述或上传首帧图' }
++    return { ok: false, code: 400, message: '请输入视频描述或上传首帧图（仅支持 http(s) URL）' }
++  }
++  if (typeof firstFrame === 'string' && firstFrame && !hasImage) {
++    return { ok: false, code: 400, message: '首帧图 URL 非法（仅支持 http(s)，且长度 ≤ 2048）' }
++  }
++  if (typeof lastFrame === 'string' && lastFrame && !hasLast) {
++    return { ok: false, code: 400, message: '尾帧图 URL 非法（仅支持 http(s)，且长度 ≤ 2048）' }
+   }
+   if (prompt.length > VIDEO_MAX_PROMPT_CHARS) {
+     prompt = prompt.slice(0, VIDEO_MAX_PROMPT_CHARS)
+@@ -595,7 +616,7 @@ function buildVideoPayload(event) {
+       role: 'first_frame'
+     })
+   }
+-  if (typeof lastFrame === 'string' && lastFrame) {
++  if (hasLast) {
+     content.push({
+       type: 'image_url',
+       image_url: { url: lastFrame },
+@@ -610,7 +631,11 @@ function buildVideoPayload(event) {
+     duration,
+     resolution
+   }
+-  if (typeof generateAudio === 'boolean') arkBody.generate_audio = generateAudio
++  // generate_audio 仅 1.5 Pro 系列支持；非兼容模型上静默忽略，
++  // 避免方舟拒绝后用户配额已扣（配额含失败任务）。
++  if (typeof generateAudio === 'boolean' && AUDIO_SUPPORTED_MODEL.test(useModel)) {
++    arkBody.generate_audio = generateAudio
++  }
+   if (typeof watermark === 'boolean') arkBody.watermark = watermark
+   if (typeof cameraFixed === 'boolean') arkBody.camera_fixed = cameraFixed
+   if (typeof returnLastFrame === 'boolean') arkBody.return_last_frame = returnLastFrame
+@@ -738,15 +763,16 @@ async function handleVideoStatus(event, openid) {
+   if (!guard.ok) return guard
+   const doc = guard.doc
+ 
+-  // 已终态直接返回，不再请求方舟
+-  const TERMINAL = ['succeeded', 'failed', 'expired', 'cancelled']
+-  if (TERMINAL.includes(doc.status) && doc.video_url) {
++  // 已终态直接返回，不再请求方舟。
++  // 注意：不再要求 doc.video_url 必须存在 —— 失败 / 过期 / 取消任务通常没有 video_url，
++  // 加该条件会让客户端反复打方舟刷已终结的任务（方舟侧也已清理，徒劳并消耗配额）。
++  if (VIDEO_TERMINAL_STATUS.includes(doc.status)) {
+     return {
+       code: 0,
+       data: {
+         task_id: doc.task_id,
+         status: doc.status,
+-        video_url: doc.video_url,
++        video_url: doc.video_url || '',
+         last_frame_url: doc.last_frame_url || '',
+         cost_cny: doc.cost_cny,
+         error_msg: doc.error_msg || '',
+@@ -792,6 +818,8 @@ async function handleVideoStatus(event, openid) {
+     })
+     .catch(e => console.error('更新 video_tasks 失败:', e))
+ 
++  // error_msg 同步使用与写库一致的 500 字符上限，避免方舟返回的长堆栈把响应体撑爆。
++  const safeErr = typeof errorMsg === 'string' ? errorMsg.slice(0, 500) : ''
+   return {
+     code: 0,
+     data: {
+@@ -800,8 +828,8 @@ async function handleVideoStatus(event, openid) {
+       video_url: videoUrl,
+       last_frame_url: lastFrameUrl,
+       cost_cny: doc.cost_cny,
+-      error_msg: typeof errorMsg === 'string' ? errorMsg : '',
+-      terminal: ['succeeded', 'failed', 'expired', 'cancelled'].includes(status),
++      error_msg: safeErr,
++      terminal: VIDEO_TERMINAL_STATUS.includes(status),
+       cached: false
+     }
+   }
+-- 
+2.43.0
+
