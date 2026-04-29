@@ -1,17 +1,55 @@
 // pages/chat/chat.js
 const app = getApp()
 
-// 简易 Markdown 转 rich-text
+// 先转义 HTML 元字符，再做 Markdown 替换，避免 AI 输出含原始标签时
+// 在 rich-text 中产生标签错乱或样式注入。
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+// 临时占位符，避免代码块内的内容被后续行内规则二次替换
+const CODE_BLOCK_PLACEHOLDER = '\u0000CODE_BLOCK_'
+const INLINE_CODE_PLACEHOLDER = '\u0000INLINE_CODE_'
+
 function md2html(text) {
   if (!text) return ''
-  let html = text
-    .replace(/```(\w*)\n([\s\S]*?)```/g, '<div style="background:#1E293B;color:#E2E8F0;padding:24rpx;border-radius:12rpx;font-size:24rpx;overflow-x:auto;margin:12rpx 0"><code>$2</code></div>')
-    .replace(/`([^`]+)`/g, '<span style="background:#F1F5F9;padding:4rpx 8rpx;border-radius:4rpx;font-size:24rpx;color:#DC2626">$1</span>')
+  const codeBlocks = []
+  const inlineCodes = []
+
+  let safe = String(text)
+    .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      codeBlocks.push(code)
+      return `${CODE_BLOCK_PLACEHOLDER}${codeBlocks.length - 1}\u0000`
+    })
+    .replace(/`([^`]+)`/g, (_, code) => {
+      inlineCodes.push(code)
+      return `${INLINE_CODE_PLACEHOLDER}${inlineCodes.length - 1}\u0000`
+    })
+
+  safe = escapeHtml(safe)
+
+  let html = safe
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/^- (.+)$/gm, '<div style="padding-left:24rpx">• $1</div>')
     .replace(/^\d+\. (.+)$/gm, '<div style="padding-left:24rpx">$1</div>')
-    .replace(/\|(.+)\|/g, '<div style="font-size:24rpx;color:#475569">$1</div>')
+    .replace(/\|(.+?)\|/g, '<div style="font-size:24rpx;color:#475569">$1</div>')
     .replace(/\n/g, '<br/>')
+
+  html = html
+    .replace(new RegExp(`${CODE_BLOCK_PLACEHOLDER}(\\d+)\u0000`, 'g'), (_, i) => {
+      const code = escapeHtml(codeBlocks[Number(i)] || '')
+      return `<div style="background:#1E293B;color:#E2E8F0;padding:24rpx;border-radius:12rpx;font-size:24rpx;overflow-x:auto;margin:12rpx 0"><code>${code}</code></div>`
+    })
+    .replace(new RegExp(`${INLINE_CODE_PLACEHOLDER}(\\d+)\u0000`, 'g'), (_, i) => {
+      const code = escapeHtml(inlineCodes[Number(i)] || '')
+      return `<span style="background:#F1F5F9;padding:4rpx 8rpx;border-radius:4rpx;font-size:24rpx;color:#DC2626">${code}</span>`
+    })
+
   return html
 }
 
@@ -25,7 +63,7 @@ Page({
   },
 
   onLoad(options) {
-    const sessionId = `sid_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+    const sessionId = `sid_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     this.setData({ sessionId })
 
     // 加载历史消息（如果有 sessionId 传入）
@@ -119,7 +157,7 @@ Page({
 
     this.setData({
       messages: [],
-      sessionId: `sid_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+      sessionId: `sid_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     })
     wx.showToast({ title: '已开启新对话', icon: 'success' })
   },

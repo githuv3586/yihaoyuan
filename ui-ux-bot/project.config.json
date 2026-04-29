@@ -25,7 +25,7 @@
       "outputPath": ""
     }
   },
-  "appid": "你的小程序AppID",
+  "appid": "touristappid",
   "projectname": "ui-ux-bot",
   "libVersion": "3.3.4",
   "cloudfunctionTemplateRoot": "",
