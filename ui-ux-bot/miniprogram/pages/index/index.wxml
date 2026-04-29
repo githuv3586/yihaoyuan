@@ -1,0 +1,77 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- Hero 区域 -->
+  <view class="hero">
+    <view class="hero-icon">🎨</view>
+    <view class="hero-title">UI/UX 设计大师</view>
+    <view class="hero-desc">基于 AI 的专业设计智能引擎</view>
+    <view class="hero-tags">
+      <text class="tag">67种风格</text>
+      <text class="tag">96套配色</text>
+      <text class="tag">99条UX准则</text>
+    </view>
+  </view>
+
+  <!-- 快捷入口 -->
+  <view class="shortcuts card">
+    <view class="section-title">快速开始</view>
+    <view class="shortcut-list">
+      <view class="shortcut-item" bindtap="goChat" data-prompt="帮我设计一个现代风格的电商小程序首页">
+        <view class="shortcut-icon">🛒</view>
+        <view class="shortcut-text">电商小程序首页</view>
+      </view>
+      <view class="shortcut-item" bindtap="goChat" data-prompt="设计一个SaaS后台仪表盘，要求数据可视化">
+        <view class="shortcut-icon">📊</view>
+        <view class="shortcut-text">SaaS数据面板</view>
+      </view>
+      <view class="shortcut-item" bindtap="goChat" data-prompt="设计一个健康医疗App的配色方案和界面风格">
+        <view class="shortcut-icon">🏥</view>
+        <view class="shortcut-text">健康医疗App</view>
+      </view>
+      <view class="shortcut-item" bindtap="goChat" data-prompt="生成一个社交媒体App的设计系统，包含配色、排版、组件规范">
+        <view class="shortcut-icon">💬</view>
+        <view class="shortcut-text">社交App设计系统</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能介绍 -->
+  <view class="features card">
+    <view class="section-title">核心能力</view>
+    <view class="feature-list">
+      <view class="feature-item">
+        <view class="feature-dot" style="background:#2563EB"></view>
+        <view class="feature-info">
+          <view class="feature-name">设计系统生成</view>
+          <view class="feature-desc">一键生成完整配色、排版、组件规范</view>
+        </view>
+      </view>
+      <view class="feature-item">
+        <view class="feature-dot" style="background:#10B981"></view>
+        <view class="feature-info">
+          <view class="feature-name">风格匹配</view>
+          <view class="feature-desc">67种设计风格智能推荐</view>
+        </view>
+      </view>
+      <view class="feature-item">
+        <view class="feature-dot" style="background:#F97316"></view>
+        <view class="feature-info">
+          <view class="feature-name">UX准则审查</view>
+          <view class="feature-desc">99条专业准则自动检查</view>
+        </view>
+      </view>
+      <view class="feature-item">
+        <view class="feature-dot" style="background:#8B5CF6"></view>
+        <view class="feature-info">
+          <view class="feature-name">代码输出</view>
+          <view class="feature-desc">直接输出可用 CSS/Tailwind 代码</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部按钮 -->
+  <view class="bottom-action">
+    <button class="btn-primary" bindtap="goChat">开始设计对话</button>
+  </view>
+</view>

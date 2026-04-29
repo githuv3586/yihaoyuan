@@ -1,0 +1,24 @@
+{
+  "envId": "hh-d6gn8ng4hfb437a1a",
+  "version": "2.0",
+  "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
+  "functions": [
+    {
+      "name": "ui-ux-bot",
+      "handler": "index.main",
+      "runtime": "Nodejs18.15",
+      "timeout": 30,
+      "installDependency": true,
+      "envVariables": {
+        "GLM_API_KEY": "12997fff86dd4dddb27ce2223b3e16ba.L93iUUxDFEqjG3K2"
+      }
+    },
+    {
+      "name": "db-init",
+      "handler": "index.main",
+      "runtime": "Nodejs18.15",
+      "timeout": 60,
+      "installDependency": true
+    }
+  ]
+}

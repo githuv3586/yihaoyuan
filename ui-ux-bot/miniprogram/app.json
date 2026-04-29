@@ -1,0 +1,35 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/chat/chat",
+    "pages/designs/designs"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#2563EB",
+    "navigationBarTitleText": "UI/UX设计大师",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F8FAFC"
+  },
+  "tabBar": {
+    "color": "#64748B",
+    "selectedColor": "#2563EB",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "",
+        "selectedIconPath": ""
+      },
+      {
+        "pagePath": "pages/designs/designs",
+        "text": "我的设计",
+        "iconPath": "",
+        "selectedIconPath": ""
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "cloud": true,
+  "style": "v2"
+}

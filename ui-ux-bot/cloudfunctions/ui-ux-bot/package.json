@@ -1,0 +1,13 @@
+{
+  "name": "ui-ux-bot",
+  "version": "2.0.0",
+  "description": "UI/UX设计大师云函数 - GLM-5.1 + 云数据库持久化",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

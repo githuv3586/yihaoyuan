@@ -1,0 +1,47 @@
+<!--pages/designs/designs.wxml-->
+<view class="designs-container">
+  <!-- 顶部切换 -->
+  <view class="tabs">
+    <view class="tab {{filter === 'all' ? 'active' : ''}}" bindtap="setFilter" data-filter="all">全部</view>
+    <view class="tab {{filter === 'favorite' ? 'active' : ''}}" bindtap="setFilter" data-filter="favorite">收藏</view>
+  </view>
+
+  <!-- 设计列表 -->
+  <view class="design-list" wx:if="{{list.length > 0}}">
+    <view class="design-card" wx:for="{{list}}" wx:key="_id" bindtap="viewDetail" data-index="{{index}}">
+      <view class="design-header">
+        <view class="design-title">{{item.title}}</view>
+        <view class="design-fav" catchtap="toggleFav" data-id="{{item._id}}" data-index="{{index}}">
+          {{item.is_favorite ? '❤️' : '🤍'}}
+        </view>
+      </view>
+      <view class="design-meta">
+        <text class="tag" wx:if="{{item.industry}}">{{item.industry}}</text>
+        <text class="tag" wx:if="{{item.style}}">{{item.style}}</text>
+      </view>
+      <!-- 配色预览 -->
+      <view class="color-preview" wx:if="{{item.colors}}">
+        <view class="color-dot" style="background:{{item.colors.primary}}"></view>
+        <view class="color-dot" style="background:{{item.colors.secondary}}"></view>
+        <view class="color-dot" style="background:{{item.colors.cta}}"></view>
+        <view class="color-dot" style="background:{{item.colors.bg}}"></view>
+        <view class="color-dot" style="background:{{item.colors.text}}"></view>
+      </view>
+      <view class="design-time">{{item.created_at_str}}</view>
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty" wx:if="{{list.length === 0 && !loading}}">
+    <view class="empty-icon">🎨</view>
+    <view class="empty-text">暂无设计系统</view>
+    <view class="empty-hint">在对话中点击「保存设计」即可收藏</view>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-dots" wx:if="{{loading}}">
+    <view class="dot"></view>
+    <view class="dot"></view>
+    <view class="dot"></view>
+  </view>
+</view>

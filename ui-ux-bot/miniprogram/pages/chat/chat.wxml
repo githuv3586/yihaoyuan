@@ -1,0 +1,77 @@
+<!--pages/chat/chat.wxml-->
+<view class="chat-container">
+  <!-- 消息列表 -->
+  <scroll-view
+    class="message-list"
+    scroll-y
+    scroll-into-view="{{scrollToId}}"
+    scroll-with-animation
+  >
+    <!-- 欢迎消息 -->
+    <view class="msg-row ai" id="msg-welcome">
+      <view class="avatar ai-avatar">🎨</view>
+      <view class="bubble ai-bubble">
+        <view class="bubble-text">你好！我是 UI/UX 设计大师。告诉我你的设计需求，我会为你生成专业的设计方案。</view>
+      </view>
+    </view>
+
+    <!-- 对话消息 -->
+    <view wx:for="{{messages}}" wx:key="id" id="msg-{{index}}">
+      <!-- 用户消息 -->
+      <view class="msg-row user" wx:if="{{item.role === 'user'}}">
+        <view class="bubble user-bubble">
+          <view class="bubble-text">{{item.content}}</view>
+        </view>
+        <view class="avatar user-avatar">👤</view>
+      </view>
+      <!-- AI消息 -->
+      <view class="msg-row ai" wx:if="{{item.role === 'assistant'}}">
+        <view class="avatar ai-avatar">🎨</view>
+        <view class="bubble ai-bubble">
+          <view class="bubble-text">
+            <rich-text nodes="{{item.htmlContent || item.content}}"></rich-text>
+          </view>
+          <!-- AI 消息操作栏 -->
+          <view class="msg-actions">
+            <view class="msg-action" catchtap="copyMsg" data-index="{{index}}">复制</view>
+            <view class="msg-action" catchtap="saveDesign" data-index="{{index}}">保存设计</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载中 -->
+    <view class="msg-row ai" wx:if="{{loading}}" id="msg-loading">
+      <view class="avatar ai-avatar">🎨</view>
+      <view class="bubble ai-bubble">
+        <view class="loading-dots">
+          <view class="dot"></view>
+          <view class="dot"></view>
+          <view class="dot"></view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部输入区 -->
+  <view class="input-bar">
+    <view class="input-wrap">
+      <input
+        class="chat-input"
+        placeholder="描述你的设计需求..."
+        value="{{inputText}}"
+        bindinput="onInput"
+        confirm-type="send"
+        bindconfirm="send"
+        disabled="{{loading}}"
+      />
+      <button class="send-btn" bindtap="send" disabled="{{loading || !inputText.trim()}}">
+        发送
+      </button>
+    </view>
+    <view class="action-bar">
+      <view class="action-btn" bindtap="resetChat">新对话</view>
+      <view class="action-btn" bindtap="copyLast">复制回复</view>
+    </view>
+  </view>
+</view>
