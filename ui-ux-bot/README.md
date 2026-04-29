@@ -1,11 +1,13 @@
 # UI/UX 设计大师 - 微信小程序
 
-> 基于 GLM-5.1 的专业 UI/UX 设计智能助手，封装自 CNB NPC `npc/ui-ux-pro-max`
+> 基于智谱 GLM 的专业 UI/UX 设计智能助手，封装自 CNB NPC `npc/ui-ux-pro-max`
+>
+> 默认模型：`glm-4-plus`（可通过环境变量 `GLM_MODEL` 覆盖；具体模型名以 [智谱开放平台](https://open.bigmodel.cn/dev/api) 当前可用列表为准）。
 
 ## 🏗️ 架构
 
 ```
-微信小程序 → CloudBase 云函数 → GLM-5.1 API（秒级响应）
+微信小程序 → CloudBase 云函数 → 智谱 GLM Coding 端点
     ↑               ↑
   3个页面      云数据库 5个集合
   首页/对话/收藏  用户/会话/消息/设计/统计
@@ -98,11 +100,18 @@ git clone https://cnb.cool/cnbvv/ui-ux-bot.git
 
 ### 4. 配置云函数环境变量
 
-CloudBase 控制台 → 云函数 → `ui-ux-bot` → 配置：
+> ⚠️ **安全提示**：请勿将 API Key 写入仓库或 `index.js`。云函数已强制要求通过环境变量注入，未配置时直接返回 500。
 
-```
-GLM_API_KEY=12997fff86dd4dddb27ce2223b3e16ba.L93iUUxDFEqjG3K2
-```
+CloudBase 控制台 → 云函数 → `ui-ux-bot` → 环境变量：
+
+| 变量 | 必填 | 说明 |
+|------|------|------|
+| `GLM_API_KEY` | ✅ | 智谱开放平台密钥（建议使用 Coding Plan 子 key） |
+| `GLM_MODEL` | 否 | 默认 `glm-4-plus`，可改为 `glm-4-flash` / `glm-4.6` 等 |
+| `GLM_API` | 否 | 默认 Coding Plan 端点；如需通用端点可覆盖 |
+| `MAX_HISTORY` | 否 | 上下文保留轮数，默认 20 |
+| `MAX_PROMPT_CHARS` | 否 | 单次提示最大字符数，默认 4000 |
+| `DAILY_QUOTA_PER_USER` | 否 | 单用户每日调用上限，默认 200 |
 
 ### 5. 部署主云函数
 
@@ -119,6 +128,13 @@ GLM_API_KEY=12997fff86dd4dddb27ce2223b3e16ba.L93iUUxDFEqjG3K2
 ### 7. 编译运行
 
 点击开发者工具的「编译」即可预览
+
+## 🔐 安全须知
+
+1. **API Key 不得入库**：仓库中任何位置（包括 README 示例）都禁止出现真实 key；如有泄漏请立即在智谱控制台吊销并重置。
+2. **云函数所有权校验**：`delete_design` / `toggle_favorite` 在云函数内会校验 `designId` 归属，避免越权操作。
+3. **限流与长度限制**：`chat` 接口受 `DAILY_QUOTA_PER_USER` 与 `MAX_PROMPT_CHARS` 控制，可结合 CloudBase 控制台并发限制使用。
+4. **rich-text 渲染**：对话页的 markdown→html 转换会先做 HTML 转义，再处理 markdown 语法，避免 AI 输出中的原始标签破坏渲染。
 
 ## ✨ 功能
 
@@ -149,7 +165,7 @@ GLM_API_KEY=12997fff86dd4dddb27ce2223b3e16ba.L93iUUxDFEqjG3K2
 | action | 说明 | 参数 |
 |--------|------|------|
 | `chat` | 对话 | prompt, sessionId |
-| `history` | 加载历史 | sessionId, limit |
+| `history` | 加载历史 | sessionId, limit, beforeId（游标分页） |
 | `reset` | 归档会话 | sessionId |
 | `save_design` | 保存设计 | sessionId, title, industry, style, rawReply |
 | `list_designs` | 设计列表 | favoriteOnly, page, pageSize |

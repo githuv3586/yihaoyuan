@@ -10,7 +10,7 @@
       "timeout": 30,
       "installDependency": true,
       "envVariables": {
-        "GLM_API_KEY": "12997fff86dd4dddb27ce2223b3e16ba.L93iUUxDFEqjG3K2"
+        "GLM_API_KEY": "REPLACE_ME_VIA_CLOUDBASE_CONSOLE"
       }
     },
     {
