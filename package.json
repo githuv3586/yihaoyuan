@@ -1,0 +1,12 @@
+{
+  "name": "jinhongxing",
+  "version": "1.0.0",
+  "description": "锦鸿行 - 基于腾讯云云开发与文档数据库的活动报名 Demo（仿活动行）",
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "dev": "node scripts/serve.js",
+    "init-db": "node scripts/init-db.js"
+  },
+  "keywords": ["腾讯云", "cloudbase", "云开发", "文档数据库", "活动报名", "demo"],
+  "license": "MIT"
+}

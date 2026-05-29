@@ -1,0 +1,9 @@
+{
+  "name": "signup",
+  "version": "1.0.0",
+  "description": "锦鸿行 - 活动报名",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.9.0"
+  }
+}

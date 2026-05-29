@@ -1,0 +1,9 @@
+{
+  "name": "getActivities",
+  "version": "1.0.0",
+  "description": "锦鸿行 - 获取活动/分类列表",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.9.0"
+  }
+}
