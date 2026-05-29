@@ -63,6 +63,42 @@
         </div>
       </div>
 
+      <!-- 登录弹窗（登录即自动注册，无独立注册入口） -->
+      <div id="login-modal" class="modal hidden">
+        <div class="modal-mask" data-lclose="1"></div>
+        <div class="modal-card">
+          <div class="modal-title">登录 / 一键注册</div>
+          <form id="login-form">
+            <label class="field">
+              <span>手机号</span>
+              <input
+                name="phone"
+                type="tel"
+                placeholder="请输入手机号"
+                pattern="1[0-9]{10}"
+                maxlength="11"
+                required
+              />
+            </label>
+            <label class="field">
+              <span>密码</span>
+              <input
+                name="password"
+                type="password"
+                placeholder="请输入密码"
+                minlength="6"
+                required
+              />
+            </label>
+            <p class="login-hint">未注册的手机号，登录时将自动为你创建账号</p>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-ghost" data-lclose="1">取消</button>
+              <button type="submit" class="btn btn-primary">登录</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
       <!-- 轻提示 -->
       <div id="toast" class="toast hidden"></div>
     </div>

@@ -45,7 +45,7 @@ async function main() {
     )
   );
 
-  const collections = ["categories", "activities", "orders"];
+  const collections = ["categories", "activities", "orders", "users"];
   for (const name of collections) {
     try {
       await database.createCollection(name);

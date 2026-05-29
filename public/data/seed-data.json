@@ -1,19 +1,58 @@
 {
   "categories": [
-    { "_id": "cat_tech", "name": "科技互联网", "icon": "💻", "color": "#3b82f6" },
-    { "_id": "cat_music", "name": "音乐现场", "icon": "🎵", "color": "#ec4899" },
-    { "_id": "cat_edu", "name": "教育培训", "icon": "📚", "color": "#10b981" },
-    { "_id": "cat_sport", "name": "运动健身", "icon": "🏃", "color": "#f59e0b" },
-    { "_id": "cat_art", "name": "艺术展览", "icon": "🎨", "color": "#8b5cf6" },
-    { "_id": "cat_career", "name": "职场招聘", "icon": "💼", "color": "#0ea5e9" },
-    { "_id": "cat_life", "name": "生活休闲", "icon": "☕", "color": "#ef4444" }
+    {
+      "_id": "cat_tech",
+      "name": "科技互联网",
+      "icon": "💻",
+      "color": "#3b82f6"
+    },
+    {
+      "_id": "cat_music",
+      "name": "音乐现场",
+      "icon": "🎵",
+      "color": "#ec4899"
+    },
+    {
+      "_id": "cat_edu",
+      "name": "教育培训",
+      "icon": "📚",
+      "color": "#10b981"
+    },
+    {
+      "_id": "cat_sport",
+      "name": "运动健身",
+      "icon": "🏃",
+      "color": "#f59e0b"
+    },
+    {
+      "_id": "cat_art",
+      "name": "艺术展览",
+      "icon": "🎨",
+      "color": "#8b5cf6"
+    },
+    {
+      "_id": "cat_career",
+      "name": "职场招聘",
+      "icon": "💼",
+      "color": "#0ea5e9"
+    },
+    {
+      "_id": "cat_life",
+      "name": "生活休闲",
+      "icon": "☕",
+      "color": "#ef4444"
+    }
   ],
   "activities": [
     {
       "_id": "act_001",
       "title": "2026 腾讯云开发者大会·AI 应用专场",
       "categoryId": "cat_tech",
-      "cover": { "emoji": "🤖", "from": "#2563eb", "to": "#06b6d4" },
+      "cover": {
+        "emoji": "🤖",
+        "from": "#2563eb",
+        "to": "#06b6d4"
+      },
       "city": "深圳",
       "address": "深圳市南山区腾讯滨海大厦 2 楼报告厅",
       "startTime": "2026-06-18 09:00",
@@ -22,7 +61,11 @@
       "host": "腾讯云 CloudBase 团队",
       "capacity": 500,
       "enrolled": 386,
-      "tags": ["云开发", "AI", "Serverless"],
+      "tags": [
+        "云开发",
+        "AI",
+        "Serverless"
+      ],
       "summary": "聚焦云开发与 AI 应用落地，现场解析文档数据库、云函数与大模型集成实战。",
       "detail": "本次大会邀请一线架构师分享 Serverless 云开发的最佳实践，包含文档数据库建模、云函数性能优化、AI Agent 与云开发结合等热门话题。现场设有动手实验区，参会者可免费领取云开发资源代金券。\n\n议程亮点：\n· 09:30 云开发文档数据库设计模式\n· 11:00 云函数与大模型集成实战\n· 14:00 锦鸿行案例：从 0 到 1 搭建报名平台\n· 16:00 圆桌：Serverless 的未来",
       "status": "open"
@@ -31,7 +74,11 @@
       "_id": "act_002",
       "title": "城市民谣音乐节·夏夜星空场",
       "categoryId": "cat_music",
-      "cover": { "emoji": "🎸", "from": "#db2777", "to": "#9333ea" },
+      "cover": {
+        "emoji": "🎸",
+        "from": "#db2777",
+        "to": "#9333ea"
+      },
       "city": "成都",
       "address": "成都市武侯区音乐公园中央草坪",
       "startTime": "2026-07-05 18:30",
@@ -40,7 +87,11 @@
       "host": "声浪现场 LiveHouse",
       "capacity": 2000,
       "enrolled": 1542,
-      "tags": ["民谣", "音乐节", "户外"],
+      "tags": [
+        "民谣",
+        "音乐节",
+        "户外"
+      ],
       "summary": "夏夜草坪，十组独立音乐人轮番登场，一起在星空下歌唱。",
       "detail": "城市民谣音乐节回归！本场集结十组备受喜爱的独立音乐人，带来民谣、城市流行与世界音乐的混搭体验。现场配套精酿啤酒与文创市集，凭票入场。\n\n温馨提示：建议自带防潮垫，活动雨天照常进行。",
       "status": "open"
@@ -49,7 +100,11 @@
       "_id": "act_003",
       "title": "前端工程化实战训练营（线下）",
       "categoryId": "cat_edu",
-      "cover": { "emoji": "📦", "from": "#059669", "to": "#84cc16" },
+      "cover": {
+        "emoji": "📦",
+        "from": "#059669",
+        "to": "#84cc16"
+      },
       "city": "北京",
       "address": "北京市海淀区中关村创业大街 3 号楼",
       "startTime": "2026-06-27 09:30",
@@ -58,7 +113,11 @@
       "host": "极客学院",
       "capacity": 80,
       "enrolled": 72,
-      "tags": ["前端", "工程化", "训练营"],
+      "tags": [
+        "前端",
+        "工程化",
+        "训练营"
+      ],
       "summary": "两天集训，掌握构建工具、CI/CD 与组件库工程化的完整链路。",
       "detail": "面向有一定基础的前端工程师，两天时间系统学习模块化、打包优化、自动化测试与持续集成。小班教学，配备助教一对一答疑，结业颁发证书。",
       "status": "open"
@@ -67,7 +126,11 @@
       "_id": "act_004",
       "title": "城市夜跑·10 公里滨江挑战",
       "categoryId": "cat_sport",
-      "cover": { "emoji": "🌃", "from": "#f59e0b", "to": "#ef4444" },
+      "cover": {
+        "emoji": "🌃",
+        "from": "#f59e0b",
+        "to": "#ef4444"
+      },
       "city": "上海",
       "address": "上海市黄浦区滨江步道起点广场",
       "startTime": "2026-06-21 19:00",
@@ -76,7 +139,11 @@
       "host": "悦动跑团",
       "capacity": 300,
       "enrolled": 210,
-      "tags": ["夜跑", "10km", "滨江"],
+      "tags": [
+        "夜跑",
+        "10km",
+        "滨江"
+      ],
       "summary": "沿江夜跑 10 公里，完赛即得纪念奖牌与能量补给。",
       "detail": "专业领跑员带队，分配速组进行，全程设有补给点与医疗保障。报名即赠速干 T 恤一件，完赛发放定制奖牌。",
       "status": "open"
@@ -85,7 +152,11 @@
       "_id": "act_005",
       "title": "当代插画艺术展·色彩的边界",
       "categoryId": "cat_art",
-      "cover": { "emoji": "🖼️", "from": "#7c3aed", "to": "#ec4899" },
+      "cover": {
+        "emoji": "🖼️",
+        "from": "#7c3aed",
+        "to": "#ec4899"
+      },
       "city": "杭州",
       "address": "杭州市西湖区天目里美术馆 B1",
       "startTime": "2026-06-10 10:00",
@@ -94,7 +165,11 @@
       "host": "天目里美术馆",
       "capacity": 5000,
       "enrolled": 2310,
-      "tags": ["插画", "展览", "亲子"],
+      "tags": [
+        "插画",
+        "展览",
+        "亲子"
+      ],
       "summary": "汇集 30 位插画师作品，探索色彩与情绪的表达边界。",
       "detail": "展览历时两个月，分为「城市」「梦境」「自然」三个主题展区，并设有互动绘画工作坊。门票含一次工作坊体验名额，适合亲子与艺术爱好者。",
       "status": "open"
@@ -103,7 +178,11 @@
       "_id": "act_006",
       "title": "互联网大厂春季专场招聘会",
       "categoryId": "cat_career",
-      "cover": { "emoji": "💼", "from": "#0284c7", "to": "#22d3ee" },
+      "cover": {
+        "emoji": "💼",
+        "from": "#0284c7",
+        "to": "#22d3ee"
+      },
       "city": "广州",
       "address": "广州市天河区琶洲国际会展中心 A 馆",
       "startTime": "2026-06-14 09:00",
@@ -112,7 +191,11 @@
       "host": "智联校招",
       "capacity": 3000,
       "enrolled": 1980,
-      "tags": ["招聘", "校招", "社招"],
+      "tags": [
+        "招聘",
+        "校招",
+        "社招"
+      ],
       "summary": "50+ 互联网企业现场招聘，技术、产品、运营岗位全覆盖。",
       "detail": "现场设有简历诊断区、模拟面试区与名企宣讲专区。建议携带多份纸质简历，着正装出席。线上同步开放投递通道。",
       "status": "open"
@@ -121,7 +204,11 @@
       "_id": "act_007",
       "title": "周末精品手冲咖啡品鉴沙龙",
       "categoryId": "cat_life",
-      "cover": { "emoji": "☕", "from": "#dc2626", "to": "#f97316" },
+      "cover": {
+        "emoji": "☕",
+        "from": "#dc2626",
+        "to": "#f97316"
+      },
       "city": "深圳",
       "address": "深圳市福田区一方咖啡实验室",
       "startTime": "2026-06-08 14:00",
@@ -130,7 +217,11 @@
       "host": "一方咖啡",
       "capacity": 20,
       "enrolled": 18,
-      "tags": ["咖啡", "品鉴", "社交"],
+      "tags": [
+        "咖啡",
+        "品鉴",
+        "社交"
+      ],
       "summary": "由 SCA 认证咖啡师带你品鉴六款单品豆，学习手冲技巧。",
       "detail": "小型沙龙，限额 20 人。现场品鉴来自埃塞俄比亚、哥伦比亚等产区的精品豆，并亲手冲煮一杯属于自己的咖啡。含全部物料与伴手礼。",
       "status": "open"
@@ -139,7 +230,11 @@
       "_id": "act_008",
       "title": "云原生架构师认证公开课",
       "categoryId": "cat_tech",
-      "cover": { "emoji": "☁️", "from": "#1d4ed8", "to": "#38bdf8" },
+      "cover": {
+        "emoji": "☁️",
+        "from": "#1d4ed8",
+        "to": "#38bdf8"
+      },
       "city": "线上",
       "address": "线上直播（报名后发送观看链接）",
       "startTime": "2026-06-25 20:00",
@@ -148,7 +243,11 @@
       "host": "CloudNative 社区",
       "capacity": 10000,
       "enrolled": 4521,
-      "tags": ["云原生", "直播", "免费"],
+      "tags": [
+        "云原生",
+        "直播",
+        "免费"
+      ],
       "summary": "一小时讲透容器、微服务与 Serverless 的演进路线。",
       "detail": "线上公开课，资深架构师分享云原生技术全景，解析企业上云的典型路径与避坑指南。报名后将通过短信发送直播间链接，支持回放。",
       "status": "open"
@@ -157,7 +256,11 @@
       "_id": "act_009",
       "title": "亲子陶艺手作半日体验",
       "categoryId": "cat_life",
-      "cover": { "emoji": "🏺", "from": "#ea580c", "to": "#facc15" },
+      "cover": {
+        "emoji": "🏺",
+        "from": "#ea580c",
+        "to": "#facc15"
+      },
       "city": "苏州",
       "address": "苏州市姑苏区平江路慢生活陶艺馆",
       "startTime": "2026-06-15 09:30",
@@ -166,7 +269,11 @@
       "host": "慢生活陶艺馆",
       "capacity": 30,
       "enrolled": 12,
-      "tags": ["亲子", "陶艺", "手作"],
+      "tags": [
+        "亲子",
+        "陶艺",
+        "手作"
+      ],
       "summary": "一大一小，共同完成一件专属陶艺作品。",
       "detail": "适合 4 岁以上儿童及家长参与。专业老师指导拉坯、塑形与上色，作品烧制后可邮寄到家。费用为一组（一大一小）价格。",
       "status": "open"
@@ -175,7 +282,11 @@
       "_id": "act_010",
       "title": "独立游戏开发者交流之夜",
       "categoryId": "cat_tech",
-      "cover": { "emoji": "🎮", "from": "#4f46e5", "to": "#a855f7" },
+      "cover": {
+        "emoji": "🎮",
+        "from": "#4f46e5",
+        "to": "#a855f7"
+      },
       "city": "上海",
       "address": "上海市杨浦区创智天地众创空间",
       "startTime": "2026-07-12 19:00",
@@ -184,7 +295,11 @@
       "host": "IndieHub 独立游戏社区",
       "capacity": 120,
       "enrolled": 64,
-      "tags": ["游戏", "独立开发", "Demo"],
+      "tags": [
+        "游戏",
+        "独立开发",
+        "Demo"
+      ],
       "summary": "开发者 Demo 展示 + 自由交流，寻找你的下一个队友。",
       "detail": "本期设有 6 个 Demo 展位，开发者现场试玩并交流。设有自由 networking 环节与抽奖。无论你是程序、美术、策划还是发行，都欢迎参加。",
       "status": "open"
@@ -193,7 +308,11 @@
       "_id": "act_011",
       "title": "古典钢琴独奏音乐会·肖邦之夜",
       "categoryId": "cat_music",
-      "cover": { "emoji": "🎹", "from": "#be185d", "to": "#7c3aed" },
+      "cover": {
+        "emoji": "🎹",
+        "from": "#be185d",
+        "to": "#7c3aed"
+      },
       "city": "北京",
       "address": "北京市东城区中山公园音乐堂",
       "startTime": "2026-07-20 19:30",
@@ -202,7 +321,11 @@
       "host": "中山公园音乐堂",
       "capacity": 800,
       "enrolled": 540,
-      "tags": ["钢琴", "古典", "音乐会"],
+      "tags": [
+        "钢琴",
+        "古典",
+        "音乐会"
+      ],
       "summary": "青年钢琴家演绎肖邦经典夜曲与叙事曲。",
       "detail": "全场曲目均选自肖邦代表作，含夜曲、叙事曲与练习曲。演出时长约两小时，含中场休息。请提前 30 分钟入场，迟到观众需在中场入座。",
       "status": "open"
@@ -211,7 +334,11 @@
       "_id": "act_012",
       "title": "瑜伽与正念冥想周末工作坊",
       "categoryId": "cat_sport",
-      "cover": { "emoji": "🧘", "from": "#d97706", "to": "#f43f5e" },
+      "cover": {
+        "emoji": "🧘",
+        "from": "#d97706",
+        "to": "#f43f5e"
+      },
       "city": "广州",
       "address": "广州市越秀区静禅瑜伽生活馆",
       "startTime": "2026-06-22 09:00",
@@ -220,7 +347,11 @@
       "host": "静禅瑜伽",
       "capacity": 25,
       "enrolled": 25,
-      "tags": ["瑜伽", "冥想", "减压"],
+      "tags": [
+        "瑜伽",
+        "冥想",
+        "减压"
+      ],
       "summary": "三小时身心放松，从呼吸到体式的完整正念练习。",
       "detail": "适合各水平练习者，提供瑜伽垫与辅具。课程包含呼吸法、流瑜伽序列与正念冥想引导。本场名额已满，可点击关注，开放候补时第一时间通知。",
       "status": "full"
@@ -232,11 +363,21 @@
       "activityId": "act_001",
       "activityTitle": "2026 腾讯云开发者大会·AI 应用专场",
       "userName": "示例用户",
-      "userPhone": "138****8888",
+      "userPhone": "13800008888",
       "ticketCount": 1,
       "amount": 0,
       "status": "已确认",
-      "createdAt": "2026-05-20 10:24"
+      "createdAt": "2026-05-20 10:24",
+      "userId": "user_demo"
+    }
+  ],
+  "users": [
+    {
+      "_id": "user_demo",
+      "phone": "13800008888",
+      "password": "123456",
+      "name": "示例用户",
+      "createdAt": "2026-05-18 09:00"
     }
   ]
 }

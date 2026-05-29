@@ -1,5 +1,7 @@
 /**
  * 锦鸿行 - 前端应用（hash 路由 + 视图渲染 + 交互）
+ *
+ * 账号：登录即自动注册（手机号首次登录自动建号），不提供独立注册入口。
  */
 (function () {
   const store = window.JHX_STORE;
@@ -7,7 +9,6 @@
   const viewEl = document.getElementById("view");
   const appbarEl = document.getElementById("appbar-inner");
 
-  // 首页交互状态
   const state = { categories: [], activeCat: "all", keyword: "" };
 
   // --------------------------------------------------------------------- utils
@@ -20,6 +21,9 @@
       '"': "&quot;",
       "'": "&#39;",
     }[c]));
+
+  const maskPhone = (p) =>
+    p && p.length === 11 ? p.slice(0, 3) + "****" + p.slice(7) : p;
 
   function toast(msg) {
     const el = document.getElementById("toast");
@@ -37,13 +41,44 @@
     const c = state.categories.find((x) => x._id === id);
     return c ? c.icon : "📌";
   }
-
   function priceText(p) {
     return p === 0 ? '<span class="free">免费</span>' : `¥${p}`;
   }
-
   function loading() {
     viewEl.innerHTML = '<div class="loading">加载中…</div>';
+  }
+
+  // -------------------------------------------------------------- 登录弹窗
+  // 登录即自动注册：onSuccess 在登录成功后回调
+  function openLogin(onSuccess) {
+    const modal = document.getElementById("login-modal");
+    const form = document.getElementById("login-form");
+    form.reset();
+    modal.classList.remove("hidden");
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const phone = form.phone.value.trim();
+      const password = form.password.value;
+      if (!/^1[0-9]{10}$/.test(phone)) return toast("请输入正确的手机号");
+      if (password.length < 6) return toast("密码至少 6 位");
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = "登录中…";
+      try {
+        const user = await store.login(phone, password);
+        closeLogin();
+        toast(user.isNew ? "已为你自动注册并登录 🎉" : "登录成功");
+        if (typeof onSuccess === "function") onSuccess(user);
+      } catch (err) {
+        toast(err.message || "登录失败");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "登录";
+      }
+    };
+  }
+  function closeLogin() {
+    document.getElementById("login-modal").classList.add("hidden");
   }
 
   // ---------------------------------------------------------------- 首页视图
@@ -185,17 +220,31 @@
       </div>
     `;
     if (!full) {
-      $("#btn-signup").addEventListener("click", () => openSignup(a));
+      $("#btn-signup").addEventListener("click", () => {
+        // 报名前需登录；未登录则先登录（登录即自动注册）
+        if (!store.getCurrentUser()) {
+          toast("请先登录后报名");
+          openLogin(() => openSignup(a));
+        } else {
+          openSignup(a);
+        }
+      });
     }
   }
 
   // ---------------------------------------------------------------- 报名弹窗
   function openSignup(a) {
+    const user = store.getCurrentUser();
     const modal = document.getElementById("modal");
     const form = document.getElementById("signup-form");
     const amountEl = document.getElementById("signup-amount");
     form.reset();
     form.ticketCount.value = 1;
+    // 自动带入当前登录用户信息
+    if (user) {
+      form.userName.value = user.name || "";
+      form.userPhone.value = user.phone || "";
+    }
 
     function updateAmount() {
       const n = Math.max(1, parseInt(form.ticketCount.value, 10) || 1);
@@ -249,10 +298,41 @@
     `);
     setTab("my");
     loading();
+
+    const user = store.getCurrentUser();
+    if (!user) {
+      // 未登录：仅展示登录入口（登录即自动注册，无独立注册入口）
+      viewEl.innerHTML = `
+        <div class="login-panel">
+          <div class="login-logo">锦</div>
+          <h2 class="login-welcome">欢迎来到锦鸿行</h2>
+          <p class="login-sub">登录后查看与管理你的活动报名</p>
+          <button class="btn btn-primary btn-lg login-entry" id="go-login">登录 / 一键注册</button>
+          <p class="login-hint">未注册的手机号，登录时将自动为你创建账号</p>
+        </div>`;
+      $("#go-login").addEventListener("click", () => openLogin(renderMy));
+      bindReset();
+      return;
+    }
+
     const orders = await store.getMyOrders();
-    viewEl.innerHTML = orders.length
-      ? `<div class="orders">${orders.map(orderItem).join("")}</div>`
-      : `<div class="empty">还没有报名记录<br/><a class="link" href="#/">去发现活动 ›</a></div>`;
+    viewEl.innerHTML = `
+      <div class="user-bar">
+        <div class="user-info">
+          <span class="user-avatar">${esc((user.name || "用").slice(0, 1))}</span>
+          <div>
+            <strong>${esc(user.name)}</strong>
+            <small>${esc(maskPhone(user.phone))}</small>
+          </div>
+        </div>
+        <button class="logout-btn" id="logout-btn">退出登录</button>
+      </div>
+      ${
+        orders.length
+          ? `<div class="orders">${orders.map(orderItem).join("")}</div>`
+          : `<div class="empty">还没有报名记录<br/><a class="link" href="#/">去发现活动 ›</a></div>`
+      }
+    `;
 
     viewEl.querySelectorAll(".order-cancel").forEach((b) =>
       b.addEventListener("click", async () => {
@@ -268,11 +348,19 @@
         location.hash = "#/detail/" + c.dataset.act;
       })
     );
+    $("#logout-btn").addEventListener("click", () => {
+      store.logout();
+      toast("已退出登录");
+      renderMy();
+    });
+    bindReset();
+  }
 
+  function bindReset() {
     const reset = $("#reset-btn");
     if (reset)
       reset.addEventListener("click", async () => {
-        if (!confirm("重置为初始演示数据？")) return;
+        if (!confirm("重置为初始演示数据？（不影响登录状态）")) return;
         await store.reset();
         state.categories = [];
         toast("已重置");
@@ -289,7 +377,7 @@
         </div>
         <h3 class="order-title">${esc(o.activityTitle)}</h3>
         <div class="order-meta">
-          <span>👤 ${esc(o.userName)} · ${esc(o.userPhone)}</span>
+          <span>👤 ${esc(o.userName)} · ${esc(maskPhone(o.userPhone))}</span>
         </div>
         <div class="order-foot">
           <span>🎟️ ${o.ticketCount} 张 · ${
@@ -314,11 +402,15 @@
   document.getElementById("modal").addEventListener("click", (e) => {
     if (e.target.dataset.close) closeModal();
   });
+  document.getElementById("login-modal").addEventListener("click", (e) => {
+    if (e.target.dataset.lclose) closeLogin();
+  });
 
   // ------------------------------------------------------------------- 路由
   async function router() {
     const hash = location.hash || "#/";
     closeModal();
+    closeLogin();
     window.scrollTo(0, 0);
     viewEl.scrollTop = 0;
     if (hash.startsWith("#/detail/")) {

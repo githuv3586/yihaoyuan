@@ -1,0 +1,9 @@
+{
+  "name": "login",
+  "version": "1.0.0",
+  "description": "锦鸿行 - 登录即自动注册",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "^2.9.0"
+  }
+}

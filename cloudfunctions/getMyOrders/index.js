@@ -1,7 +1,7 @@
 /**
  * 云函数 getMyOrders
- * 查询当前用户报名记录；action="cancel" 时取消报名并回退名额。
- * 入参：{ action?: "list" | "cancel", orderId? }
+ * 查询某用户的报名记录；action="cancel" 时取消报名并回退名额。
+ * 入参：{ action?: "list" | "cancel", userId?, orderId? }
  */
 const tcb = require("@cloudbase/node-sdk");
 
@@ -9,13 +9,9 @@ const app = tcb.init({ env: tcb.SYMBOL_CURRENT_ENV });
 const db = app.database();
 const _ = db.command;
 
-exports.main = async (event, context) => {
+exports.main = async (event) => {
   try {
-    const { action = "list", orderId } = event || {};
-    const openid =
-      (context && context.OPENID) ||
-      (app.auth().getUserInfo && app.auth().getUserInfo().openId) ||
-      "anonymous";
+    const { action = "list", userId, orderId } = event || {};
 
     if (action === "cancel") {
       if (!orderId) return { code: -1, message: "缺少 orderId" };
@@ -30,9 +26,10 @@ exports.main = async (event, context) => {
       return { code: 0, data: true };
     }
 
+    if (!userId) return { code: 0, data: [] };
     const res = await db
       .collection("orders")
-      .where({ openid })
+      .where({ userId })
       .orderBy("createdAt", "desc")
       .limit(100)
       .get();
