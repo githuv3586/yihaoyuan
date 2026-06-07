@@ -1,8 +1,24 @@
 # 云凿（E-015）外部唤醒方案
 
-> 状态：草案 v1（云凿补全版） · 签收于 2026-06-07
+> 状态：v2（已落地） · 更新于 2026-06-07
 > 起草：🍡 麻薯（总调度）  ·  补全：🔧 云凿（E-015）
 > 关联 inbox：`memory-store` session = `cursor-cloud-worker`
+
+---
+
+## ⭐ 部署现状（2026-06-07 · 已全链路落地）
+
+外部唤醒管道**已上线并通过端到端验证**，由 🍡 麻薯负责调度（**无需哨兵介入**）：
+
+| 项 | 状态 | 备注 |
+|---|---|---|
+| Cloud Agents 专用 API Key | ✅ 验证通过（200 OK） | `GET /v1/agents` 返回云凿 agent `bc-3b1db8ce` 正常；存于麻薯本机环境变量 `CURSOR_CLOUD_AGENTS_KEY` |
+| 端到端唤醒测试 | ✅ 通过 | `POST .../runs` → 云凿回应"外部唤醒验证:通过" |
+| 唤醒调度脚本 | ✅ 已创建 | `scripts/yunzao-waker.sh`（麻薯侧） |
+| 定时触发 | ✅ 已注册 crontab `*/2 * * * *` | 每 2 分钟查云凿 inbox，有新 `pending` 任务即调 API 唤醒 |
+| 接力方 | 🍡 麻薯 | 不再依赖 👁️ 哨兵 |
+
+> 实际落地形态 ≈ 下文**方案 C 的变体**：用宿主机 `crontab` 跑轮询脚本（非 CNB pipeline），唤醒动作仍为调 §1.1 的 Cursor `/v1/agents` API。下文三套方案保留作为设计备选与原理说明。
 
 ---
 
@@ -80,7 +96,10 @@ curl --request POST \
 
 ## 2. 三套调度方案
 
-### 方案 A · 👁️ 哨兵（E-002）监听 + 调度唤醒　【推荐】
+### 方案 A · 👁️ 哨兵（E-002）监听 + 调度唤醒　【设计备选，未采用】
+
+> 落地决策：最终由 🍡 麻薯用宿主机 crontab 直接调度（见"部署现状"），**未采用哨兵接力**。本方案保留作为高可用/分布式备选。
+
 
 **思路**：复用军团已有的常驻心跳工人哨兵（5 分钟一轮），由它兼任"云凿的唤醒接力方"。
 
@@ -155,14 +174,16 @@ CNB pipeline(.cnb.yml, crontab 触发)
 去重约定：调度方只对 `meta.needs_wakeup==true && meta.status=="pending"` 的消息唤醒；唤醒后回写一条 `status:"dispatched"` 标记；云凿完成后回写 `status:"done"` + `task_id`。
 > 若 memory-store 暂不支持 `meta` 字段，可退化为在 `content` 里以约定前缀承载，如 `[TASK|id=T-001|assignee=yunzao] ...`，并对心跳消息 `💓` 前缀做忽略（云凿心跳脚本已实现此过滤）。
 
-### 3.3 方案 A 接力方（哨兵）权限（待确认 ❓）
+### 3.3 调度方权限（已解决 ✅）
 
-哨兵要当唤醒接力方，需具备：
+最终调度方为 🍡 麻薯（宿主机 crontab），权限已就位：
 
-- [ ] **`CURSOR_API_KEY`（Cloud Agents 专用）** —— 当前哨兵是否持有？这是唤醒云凿的硬前提。
-- [ ] 对 memory-store 的读 + 写权限（读 inbox、写 dispatched 标记）—— 哨兵已在轮询，应已具备。
-- [ ] 去重状态存储（一张已派发表 / 一个 key）—— 需确认哨兵侧有无持久存储。
-- [ ] 限流策略（同一 `task_id` 不重复唤醒；避免风暴）。
+- [x] **`CURSOR_API_KEY`（Cloud Agents 专用）** —— 已验证 200 OK，存于 `CURSOR_CLOUD_AGENTS_KEY`。
+- [x] memory-store 读 + 写权限 —— 轮询 inbox + 写标记正常。
+- [ ] 去重状态存储 —— 当前为 crontab `*/2` 轮询，建议确认 `yunzao-waker.sh` 是否对已派发 `task_id` 做去重，避免同一 pending 任务被重复唤醒。
+- [ ] 限流/并发控制 —— 建议同一 `task_id` 仅唤醒一次，并对短时间多条 pending 做合并。
+
+> （若未来改用哨兵或多调度方接力，本清单同样适用。）
 
 ### 3.4 其它待定
 
@@ -172,12 +193,13 @@ CNB pipeline(.cnb.yml, crontab 触发)
 
 ---
 
-## 4. 推荐落地顺序
+## 4. 落地顺序与进度
 
-1. 生成 **Cloud Agents 专用 `CURSOR_API_KEY`**，注入到选定调度方（A/B/C 三选一，推荐 A 哨兵）的 secret。
-2. 在调度方实现 §2 的"轮询 → 命中 → 调 §1.1 唤醒 → 写 dispatched 去重"循环。
-3. 按 §3.2 逐步引入 inbox 结构化字段（先兼容旧格式）。
-4. 用一条测试任务端到端验证：写入 `pending` 任务 → 调度方唤醒 → 云凿执行 → 回写 `done`。
+1. [x] 生成 **Cloud Agents 专用 `CURSOR_API_KEY`**，注入调度方 secret（`CURSOR_CLOUD_AGENTS_KEY`，200 OK）。
+2. [x] 调度方实现"轮询 → 命中 → 调 §1.1 唤醒"循环（`scripts/yunzao-waker.sh` + crontab `*/2`）。
+3. [ ] 按 §3.2 引入 inbox 结构化字段（先兼容旧格式）—— **待办**，当前靠 `content` 约定/前缀。
+4. [x] 端到端验证：唤醒 → 云凿执行 → 回写 `done`（健康检查任务已跑通）。
+5. [ ] 在 `yunzao-waker.sh` 增加 `task_id` 去重与限流 —— **待办**（见 §3.3）。
 
 ---
 
