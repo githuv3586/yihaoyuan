@@ -1,0 +1,160 @@
+From 658ef34fa25b7bde8aa8e8385c9145efda1bae78 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Sun, 5 Jul 2026 12:22:26 +0000
+Subject: [PATCH] =?UTF-8?q?fix(v1.1.0):=20=E4=BB=A3=E7=A0=81=E5=A4=8D?=
+ =?UTF-8?q?=E5=AE=A1=E4=BF=AE=E5=A4=8D=20=E2=80=94=20=E9=99=90=E6=B5=81?=
+ =?UTF-8?q?=E9=98=B2=E4=BC=AA=E9=80=A0/apply=20=E9=99=8D=E7=BA=A7/?=
+ =?UTF-8?q?=E9=9D=99=E6=80=81404/AI=20=E9=98=B2=E5=B9=BB=E8=A7=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ README.md    | 12 +++++++++-
+ package.json |  2 +-
+ server.js    | 64 +++++++++++++++++++++++++++++++++++++++++++---------
+ 3 files changed, 65 insertions(+), 13 deletions(-)
+
+diff --git a/README.md b/README.md
+index 7c39ca0..70f8b52 100644
+--- a/README.md
++++ b/README.md
+@@ -43,6 +43,7 @@ PORT=9000 node server.js
+ | `PORT` | | 监听端口，默认 8686 |
+ | `CORS_ORIGINS` | | 允许的前端来源（逗号分隔），默认 `https://opc.so,https://www.opc.so,http://localhost:8686` |
+ | `INQUIRY_LOG_DIR` | | 降级日志目录，默认 `../private-logs` |
++| `TRUST_PROXY` | | 可信反代跳数，默认 `0`（不信任 `X-Forwarded-For`，限流按真实连接地址）。部署在 N 层可信反代之后时设为 N，防止伪造 XFF 绕过限流 |
+ 
+ ## Docker 部署
+ 
+@@ -56,4 +57,13 @@ docker run -p 8686:8686 -e CNB_TOKEN=xxx opc-so
+ 
+ ## ⚠️ 安全须知
+ 
+-**`CNB_TOKEN` 永远不要写进代码、Dockerfile 或 CI 配置。** 历史版本曾将其硬编码并提交，已在本仓库的安全修复中移除——如你从历史 commit 提取到该 token，**它已视为泄露，必须在 CNB 平台吊销并轮换**。
++**`CNB_TOKEN` 永远不要写进代码、Dockerfile 或 CI 配置。** 历史版本曾将其硬编码并提交，已从最新代码移除。⚠️ **该 token 依然完整保留在 git 历史提交中（可被 `git show`/`git log -p` 取出），必须立即在 CNB 平台吊销并轮换**；轮换后旧 token 失效即解除风险，如需彻底抹除历史可用 `git filter-repo` 重写并强推。
++
++## Changelog
++
++### v1.1.0 — 代码复审修复
++
++- **[安全] 限流防伪造**：`getClientIP` 默认不再信任 `X-Forwarded-For`，改用真实连接地址；新增 `TRUST_PROXY` 配置在可信反代后按跳数取值，杜绝伪造 XFF 绕过限流刷爆 AI 配额 / Issue。
++- **[可靠性] 咨询不再静默丢失**：`/api/apply` 当 Issue 创建与本地降级日志「双双失败」时，如实返回 502 失败，而非误报成功。
++- **[正确性] 静态资源 404 归位**：带扩展名的资源请求找不到即返回 404，不再回退 `index.html + 200` 掩盖错误；SPA 回退仅对无扩展名的页面路由生效。
++- **[健壮性] AI 结果防幻觉**：`/api/ai-match` 仅接受真实存在于政策库的 `id`，并对 `title/reason/relevance` 做长度与枚举收敛。
+diff --git a/package.json b/package.json
+index c54d24f..0e72699 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "opc-so",
+-  "version": "1.0.0",
++  "version": "1.1.0",
+   "description": "OPC 一人公司全周期赋能平台 - CNB OpenAPI 后端",
+   "main": "server.js",
+   "scripts": {
+diff --git a/server.js b/server.js
+index 60ba770..0b5c5c6 100644
+--- a/server.js
++++ b/server.js
+@@ -54,10 +54,23 @@ const ALLOWED_ORIGINS = new Set(
+     .split(',').map(s => s.trim()).filter(Boolean)
+ );
+ 
++// 可信反代跳数：默认 0 = 完全不信任 X-Forwarded-For（直接用 socket 地址）。
++// 部署在 N 层可信反代之后时，设 TRUST_PROXY=N，取右起第 N 个（由可信基础设施追加、
++// 客户端无法伪造），从而避免限流被伪造 XFF 绕过。
++const TRUST_PROXY_HOPS = Math.max(0, parseInt(process.env.TRUST_PROXY, 10) || 0);
++
+ // ===== 工具函数 =====
+ function getClientIP(req) {
+-  const fwd = req.headers['x-forwarded-for'];
+-  if (typeof fwd === 'string' && fwd.trim()) return fwd.split(',')[0].trim();
++  if (TRUST_PROXY_HOPS > 0) {
++    const fwd = req.headers['x-forwarded-for'];
++    if (typeof fwd === 'string' && fwd.trim()) {
++      const parts = fwd.split(',').map(s => s.trim()).filter(Boolean);
++      if (parts.length) {
++        const idx = parts.length - TRUST_PROXY_HOPS;
++        return parts[idx >= 0 ? idx : 0];
++      }
++    }
++  }
+   return req.socket.remoteAddress || 'unknown';
+ }
+ 
+@@ -203,7 +216,13 @@ function serveStatic(req, res, urlPath) {
+ function serveFile(req, res, filePath) {
+   fs.stat(filePath, (err, stat) => {
+     if (err || !stat.isFile()) {
+-      // SPA fallback：未找到的页面回退到 index.html（仅对非资源请求）
++      // 资源类请求（带扩展名，如 .js/.css/.png）找不到就直接 404，
++      // 避免回退到 index.html + 200 掩盖真实错误、返回错误的 Content-Type。
++      const ext = path.extname(filePath).toLowerCase();
++      if (ext && ext !== '.html') {
++        return sendJSON(res, 404, { error: 'Not Found' }, req);
++      }
++      // SPA fallback：仅对无扩展名的「页面路由」回退到 index.html
+       const fallback = path.join(__dirname, 'index.html');
+       fs.stat(fallback, (e2, s2) => {
+         if (e2 || !s2.isFile()) return sendJSON(res, 404, { error: 'Not Found' }, req);
+@@ -308,10 +327,26 @@ ${policyList}`;
+     const data = await resp.json();
+     const content = data.choices?.[0]?.message?.content || '';
+ 
++    // 仅接受真实存在于政策库中的 id，过滤 AI「幻觉」出的不存在政策，
++    // 并对透传字段做长度/枚举收敛，避免脏数据/超长文案进入前端。
++    const validIds = new Set(policies.map(p => p.id));
+     let matches = [];
+     try {
+       const jsonMatch = content.match(/\{[\s\S]*\}/);
+-      if (jsonMatch) matches = JSON.parse(jsonMatch[0]).matches || [];
++      if (jsonMatch) {
++        const parsed = JSON.parse(jsonMatch[0]).matches;
++        if (Array.isArray(parsed)) {
++          matches = parsed
++            .filter(m => m && typeof m.id === 'string' && validIds.has(m.id))
++            .slice(0, 5)
++            .map(m => ({
++              id: m.id,
++              title: (typeof m.title === 'string' ? m.title : '').slice(0, 200),
++              reason: (typeof m.reason === 'string' ? m.reason : '').slice(0, 300),
++              relevance: ['high', 'medium', 'low'].includes(m.relevance) ? m.relevance : 'medium',
++            }));
++        }
++      }
+     } catch (e) { /* 走 raw 回退 */ }
+ 
+     const result = matches.length > 0
+@@ -414,13 +449,20 @@ async function handleApply(req, res) {
+     } catch (logErr) {
+       console.error('[/api/apply] 本地日志写入也失败:', logErr.message);
+     }
+-    // 仍然告知用户成功（体验上不暴露内部故障），但日志已落盘
+-    sendJSON(res, 200, {
+-      success: true,
+-      message: '提交成功，我们会尽快联系您',
+-      fallback: true,
+-      logged,
+-    }, req);
++    if (logged) {
++      // 已落盘到本地日志：告知成功（体验上不暴露内部故障），后续可人工回捞
++      sendJSON(res, 200, {
++        success: true,
++        message: '提交成功，我们会尽快联系您',
++        fallback: true,
++      }, req);
++    } else {
++      // Issue 创建与本地日志双双失败：咨询已丢失，必须如实返回失败，避免用户误以为提交成功
++      sendJSON(res, 502, {
++        success: false,
++        error: '提交失败，请稍后重试或直接联系我们',
++      }, req);
++    }
+   }
+ }
+ 
+-- 
+2.43.0
+
