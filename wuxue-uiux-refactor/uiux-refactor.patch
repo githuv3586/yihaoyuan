@@ -1,0 +1,2191 @@
+From 081d9cf0b264fc07e65e066f960362fa863c3dc3 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Sun, 5 Jul 2026 15:58:46 +0000
+Subject: [PATCH 1/2] =?UTF-8?q?refactor(lhzx-h5):=20=E7=BB=9F=E4=B8=80=20U?=
+ =?UTF-8?q?I=20=E4=B8=BB=E9=A2=98=E4=B8=8E=E5=9B=BE=E6=A0=87=E4=BD=93?=
+ =?UTF-8?q?=E7=B3=BB?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- TDesign Mobile 主题覆盖：默认蓝全面替换为品牌朱砂红（--td-brand-color 色阶 1-10）
+- tokens 全量导出为 CSS 变量，template 内 :color 改用 var(--*)
+- 清理 legacy 硬编码颜色（#303133 / #C0C4CC / rgba(0,82,217) / #F7F9FC 等）
+- 新增 AppIcon 组件 + 品牌图标注册表，收敛 TabBar/团队/搜索/文章等内联 SVG
+- 团队头像渐变改为武学同源色板（朱砂/鎏金/墨韵/赭石/松绿）
+- index.html 补 viewport / theme-color / apple-touch-icon
+- 修复 activeTab 默认值与路由 redirect 不一致
+- 删除死代码 common.scss 与未引用图标资源（tab-*.svg / vite.svg / icons.svg）
+---
+ lhzx-h5/index.html                            |   3 +
+ lhzx-h5/public/icons.svg                      |  24 ----
+ lhzx-h5/src/assets/icons/tab-courses.svg      |   7 --
+ lhzx-h5/src/assets/icons/tab-home.svg         |   4 -
+ lhzx-h5/src/assets/icons/tab-order.svg        |   7 --
+ lhzx-h5/src/assets/icons/tab-profile.svg      |   4 -
+ lhzx-h5/src/assets/vite.svg                   |   1 -
+ lhzx-h5/src/components/AppIcon.vue            |  33 ++++++
+ lhzx-h5/src/components/ShortVideoFeed.vue     |   4 +-
+ .../src/components/WechatArticleSection.vue   |  12 +-
+ lhzx-h5/src/constants/icons.js                |  54 +++++++++
+ lhzx-h5/src/layouts/TabBarLayout.vue          |  30 +----
+ lhzx-h5/src/pages/activate-member/index.vue   |   2 +-
+ lhzx-h5/src/pages/articles/index.vue          |   2 +-
+ lhzx-h5/src/pages/assets/detail.vue           |   2 +-
+ lhzx-h5/src/pages/assets/index.vue            |   2 +-
+ lhzx-h5/src/pages/assets/text.vue             |   4 +-
+ lhzx-h5/src/pages/bind-code/index.vue         |   2 +-
+ lhzx-h5/src/pages/courses/detail.vue          |  18 +--
+ lhzx-h5/src/pages/courses/index.vue           |   4 +-
+ lhzx-h5/src/pages/home/index.vue              |   6 +-
+ lhzx-h5/src/pages/learn/index.vue             |   2 +-
+ lhzx-h5/src/pages/login/index.vue             |   6 +-
+ lhzx-h5/src/pages/material/index.vue          |   2 +-
+ lhzx-h5/src/pages/my-enrollments/index.vue    |   6 +-
+ lhzx-h5/src/pages/my-learning/index.vue       |   4 +-
+ lhzx-h5/src/pages/order/form.vue              |   2 +-
+ lhzx-h5/src/pages/points-exchange/index.vue   |   4 +-
+ lhzx-h5/src/pages/points-ledger/index.vue     |   4 +-
+ lhzx-h5/src/pages/profile/index.vue           |   2 +-
+ lhzx-h5/src/pages/profile/messages.vue        |   8 +-
+ lhzx-h5/src/pages/purchase/index.vue          |   6 +-
+ lhzx-h5/src/pages/register/index.vue          |   6 +-
+ lhzx-h5/src/pages/team/index.vue              |  24 ++--
+ lhzx-h5/src/pages/video-player/index.vue      |  16 +--
+ lhzx-h5/src/stores/app.js                     |   3 +-
+ lhzx-h5/src/styles/common.scss                | 103 ------------------
+ lhzx-h5/src/styles/global.scss                |  38 ++++++-
+ 38 files changed, 200 insertions(+), 261 deletions(-)
+ delete mode 100644 lhzx-h5/public/icons.svg
+ delete mode 100644 lhzx-h5/src/assets/icons/tab-courses.svg
+ delete mode 100644 lhzx-h5/src/assets/icons/tab-home.svg
+ delete mode 100644 lhzx-h5/src/assets/icons/tab-order.svg
+ delete mode 100644 lhzx-h5/src/assets/icons/tab-profile.svg
+ delete mode 100644 lhzx-h5/src/assets/vite.svg
+ create mode 100644 lhzx-h5/src/components/AppIcon.vue
+ create mode 100644 lhzx-h5/src/constants/icons.js
+ delete mode 100644 lhzx-h5/src/styles/common.scss
+
+diff --git a/lhzx-h5/index.html b/lhzx-h5/index.html
+index fc50948..30eedb5 100644
+--- a/lhzx-h5/index.html
++++ b/lhzx-h5/index.html
+@@ -2,7 +2,10 @@
+ <html lang="zh-CN">
+   <head>
+     <meta charset="UTF-8" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
++    <meta name="theme-color" content="#8B1A1A" />
+     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
++    <link rel="apple-touch-icon" href="/favicon.svg" />
+     <meta name="description" content="鹿功汇 — 传承武学，修习身心。武学视频、图文课程与公众号精选。" />
+     <title>鹿功汇</title>
+   </head>
+diff --git a/lhzx-h5/public/icons.svg b/lhzx-h5/public/icons.svg
+deleted file mode 100644
+index e952219..0000000
+--- a/lhzx-h5/public/icons.svg
++++ /dev/null
+@@ -1,24 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg">
+-  <symbol id="bluesky-icon" viewBox="0 0 16 17">
+-    <g clip-path="url(#bluesky-clip)"><path fill="#08060d" d="M7.75 7.735c-.693-1.348-2.58-3.86-4.334-5.097-1.68-1.187-2.32-.981-2.74-.79C.188 2.065.1 2.812.1 3.251s.241 3.602.398 4.13c.52 1.744 2.367 2.333 4.07 2.145-2.495.37-4.71 1.278-1.805 4.512 3.196 3.309 4.38-.71 4.987-2.746.608 2.036 1.307 5.91 4.93 2.746 2.72-2.746.747-4.143-1.747-4.512 1.702.189 3.55-.4 4.07-2.145.156-.528.397-3.691.397-4.13s-.088-1.186-.575-1.406c-.42-.19-1.06-.395-2.741.79-1.755 1.24-3.64 3.752-4.334 5.099"/></g>
+-    <defs><clipPath id="bluesky-clip"><path fill="#fff" d="M.1.85h15.3v15.3H.1z"/></clipPath></defs>
+-  </symbol>
+-  <symbol id="discord-icon" viewBox="0 0 20 19">
+-    <path fill="#08060d" d="M16.224 3.768a14.5 14.5 0 0 0-3.67-1.153c-.158.286-.343.67-.47.976a13.5 13.5 0 0 0-4.067 0c-.128-.306-.317-.69-.476-.976A14.4 14.4 0 0 0 3.868 3.77C1.546 7.28.916 10.703 1.231 14.077a14.7 14.7 0 0 0 4.5 2.306q.545-.748.965-1.587a9.5 9.5 0 0 1-1.518-.74q.191-.14.372-.293c2.927 1.369 6.107 1.369 8.999 0q.183.152.372.294-.723.437-1.52.74.418.838.963 1.588a14.6 14.6 0 0 0 4.504-2.308c.37-3.911-.63-7.302-2.644-10.309m-9.13 8.234c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.894 0 1.614.82 1.599 1.82.001 1-.705 1.82-1.6 1.82m5.91 0c-.878 0-1.599-.82-1.599-1.82 0-.998.705-1.82 1.6-1.82.893 0 1.614.82 1.599 1.82 0 1-.706 1.82-1.6 1.82"/>
+-  </symbol>
+-  <symbol id="documentation-icon" viewBox="0 0 21 20">
+-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="m15.5 13.333 1.533 1.322c.645.555.967.833.967 1.178s-.322.623-.967 1.179L15.5 18.333m-3.333-5-1.534 1.322c-.644.555-.966.833-.966 1.178s.322.623.966 1.179l1.534 1.321"/>
+-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M17.167 10.836v-4.32c0-1.41 0-2.117-.224-2.68-.359-.906-1.118-1.621-2.08-1.96-.599-.21-1.349-.21-2.848-.21-2.623 0-3.935 0-4.983.369-1.684.591-3.013 1.842-3.641 3.428C3 6.449 3 7.684 3 10.154v2.122c0 2.558 0 3.838.706 4.726q.306.383.713.671c.76.536 1.79.64 3.581.66"/>
+-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M3 10a2.78 2.78 0 0 1 2.778-2.778c.555 0 1.209.097 1.748-.047.48-.129.854-.503.982-.982.145-.54.048-1.194.048-1.749a2.78 2.78 0 0 1 2.777-2.777"/>
+-  </symbol>
+-  <symbol id="github-icon" viewBox="0 0 19 19">
+-    <path fill="#08060d" fill-rule="evenodd" d="M9.356 1.85C5.05 1.85 1.57 5.356 1.57 9.694a7.84 7.84 0 0 0 5.324 7.44c.387.079.528-.168.528-.376 0-.182-.013-.805-.013-1.454-2.165.467-2.616-.935-2.616-.935-.349-.91-.864-1.143-.864-1.143-.71-.48.051-.48.051-.48.787.051 1.2.805 1.2.805.695 1.194 1.817.857 2.268.649.064-.507.27-.857.49-1.052-1.728-.182-3.545-.857-3.545-3.87 0-.857.31-1.558.8-2.104-.078-.195-.349-1 .077-2.078 0 0 .657-.208 2.14.805a7.5 7.5 0 0 1 1.946-.26c.657 0 1.328.092 1.946.26 1.483-1.013 2.14-.805 2.14-.805.426 1.078.155 1.883.078 2.078.502.546.799 1.247.799 2.104 0 3.013-1.818 3.675-3.558 3.87.284.247.528.714.528 1.454 0 1.052-.012 1.896-.012 2.156 0 .208.142.455.528.377a7.84 7.84 0 0 0 5.324-7.441c.013-4.338-3.48-7.844-7.773-7.844" clip-rule="evenodd"/>
+-  </symbol>
+-  <symbol id="social-icon" viewBox="0 0 20 20">
+-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M12.5 6.667a4.167 4.167 0 1 0-8.334 0 4.167 4.167 0 0 0 8.334 0"/>
+-    <path fill="none" stroke="#aa3bff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35" d="M2.5 16.667a5.833 5.833 0 0 1 8.75-5.053m3.837.474.513 1.035c.07.144.257.282.414.309l.93.155c.596.1.736.536.307.965l-.723.73a.64.64 0 0 0-.152.531l.207.903c.164.715-.213.991-.84.618l-.872-.52a.63.63 0 0 0-.577 0l-.872.52c-.624.373-1.003.094-.84-.618l.207-.903a.64.64 0 0 0-.152-.532l-.723-.729c-.426-.43-.289-.864.306-.964l.93-.156a.64.64 0 0 0 .412-.31l.513-1.034c.28-.562.735-.562 1.012 0"/>
+-  </symbol>
+-  <symbol id="x-icon" viewBox="0 0 19 19">
+-    <path fill="#08060d" fill-rule="evenodd" d="M1.893 1.98c.052.072 1.245 1.769 2.653 3.77l2.892 4.114c.183.261.333.48.333.486s-.068.089-.152.183l-.522.593-.765.867-3.597 4.087c-.375.426-.734.834-.798.905a1 1 0 0 0-.118.148c0 .01.236.017.664.017h.663l.729-.83c.4-.457.796-.906.879-.999a692 692 0 0 0 1.794-2.038c.034-.037.301-.34.594-.675l.551-.624.345-.392a7 7 0 0 1 .34-.374c.006 0 .93 1.306 2.052 2.903l2.084 2.965.045.063h2.275c1.87 0 2.273-.003 2.266-.021-.008-.02-1.098-1.572-3.894-5.547-2.013-2.862-2.28-3.246-2.273-3.266.008-.019.282-.332 2.085-2.38l2-2.274 1.567-1.782c.022-.028-.016-.03-.65-.03h-.674l-.3.342a871 871 0 0 1-1.782 2.025c-.067.075-.405.458-.75.852a100 100 0 0 1-.803.91c-.148.172-.299.344-.99 1.127-.304.343-.32.358-.345.327-.015-.019-.904-1.282-1.976-2.808L6.365 1.85H1.8zm1.782.91 8.078 11.294c.772 1.08 1.413 1.973 1.425 1.984.016.017.241.02 1.05.017l1.03-.004-2.694-3.766L7.796 5.75 5.722 2.852l-1.039-.004-1.039-.004z" clip-rule="evenodd"/>
+-  </symbol>
+-</svg>
+diff --git a/lhzx-h5/src/assets/icons/tab-courses.svg b/lhzx-h5/src/assets/icons/tab-courses.svg
+deleted file mode 100644
+index 2c000b6..0000000
+--- a/lhzx-h5/src/assets/icons/tab-courses.svg
++++ /dev/null
+@@ -1,7 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-  <path d="M4 6.5C4 5.67157 4.67157 5 5.5 5H18.5C19.3284 5 20 5.67157 20 6.5V17.5C20 18.3284 19.3284 19 18.5 19H5.5C4.67157 19 4 18.3284 4 17.5V6.5Z" stroke="currentColor" stroke-width="1.8"/>
+-  <path d="M4 10H20" stroke="currentColor" stroke-width="1.8"/>
+-  <path d="M8 7.5V7.50999" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+-  <path d="M11 14H13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-  <path d="M10 16.5L12 14L14 16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-</svg>
+diff --git a/lhzx-h5/src/assets/icons/tab-home.svg b/lhzx-h5/src/assets/icons/tab-home.svg
+deleted file mode 100644
+index 42bd99a..0000000
+--- a/lhzx-h5/src/assets/icons/tab-home.svg
++++ /dev/null
+@@ -1,4 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-  <path d="M3 9.5L12 3L21 9.5V19.5C21 20.0523 20.5523 20.5 20 20.5H4C3.44772 20.5 3 20.0523 3 19.5V9.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-  <path d="M9 20.5V12.5H15V20.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-</svg>
+diff --git a/lhzx-h5/src/assets/icons/tab-order.svg b/lhzx-h5/src/assets/icons/tab-order.svg
+deleted file mode 100644
+index 007af70..0000000
+--- a/lhzx-h5/src/assets/icons/tab-order.svg
++++ /dev/null
+@@ -1,7 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-  <path d="M14 3H6C4.89543 3 4 3.89543 4 5V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V9L14 3Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-  <path d="M14 3V9H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-  <path d="M8 13H16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-  <path d="M8 17H13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-  <circle cx="17" cy="17" r="3" fill="#8B1A1A" stroke="#FFFFFF" stroke-width="1.2"/>
+-</svg>
+diff --git a/lhzx-h5/src/assets/icons/tab-profile.svg b/lhzx-h5/src/assets/icons/tab-profile.svg
+deleted file mode 100644
+index 4c1bf38..0000000
+--- a/lhzx-h5/src/assets/icons/tab-profile.svg
++++ /dev/null
+@@ -1,4 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-  <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+-  <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20V21H4V20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-</svg>
+diff --git a/lhzx-h5/src/assets/vite.svg b/lhzx-h5/src/assets/vite.svg
+deleted file mode 100644
+index 5101b67..0000000
+--- a/lhzx-h5/src/assets/vite.svg
++++ /dev/null
+@@ -1 +0,0 @@
+-<svg xmlns="http://www.w3.org/2000/svg" width="77" height="47" fill="none" aria-labelledby="vite-logo-title" viewBox="0 0 77 47"><title id="vite-logo-title">Vite</title><style>.parenthesis{fill:#000}@media (prefers-color-scheme:dark){.parenthesis{fill:#fff}}</style><path fill="#9135ff" d="M40.151 45.71c-.663.844-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.493c-.92 0-1.457-1.04-.92-1.788l7.479-10.471c1.07-1.498 0-3.578-1.842-3.578H15.443c-.92 0-1.456-1.04-.92-1.788l9.696-13.576c.213-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.472c-1.07 1.497 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.087.89 1.83L40.153 45.712z"/><mask id="a" width="48" height="47" x="14" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path fill="#000" d="M40.047 45.71c-.663.843-2.02.374-2.02-.699V34.708a2.26 2.26 0 0 0-2.262-2.262H24.389c-.92 0-1.457-1.04-.92-1.788l7.479-10.472c1.07-1.497 0-3.578-1.842-3.578H15.34c-.92 0-1.456-1.04-.92-1.788l9.696-13.575c.213-.297.556-.474.92-.474H53.93c.92 0 1.456 1.04.92 1.788L47.37 13.03c-1.07 1.498 0 3.578 1.842 3.578h11.376c.944 0 1.474 1.088.89 1.831L40.049 45.712z"/></mask><g mask="url(#a)"><g filter="url(#b)"><ellipse cx="5.508" cy="14.704" fill="#eee6ff" rx="5.508" ry="14.704" transform="rotate(269.814 20.96 11.29)scale(-1 1)"/></g><g filter="url(#c)"><ellipse cx="10.399" cy="29.851" fill="#eee6ff" rx="10.399" ry="29.851" transform="rotate(89.814 -16.902 -8.275)scale(1 -1)"/></g><g filter="url(#d)"><ellipse cx="5.508" cy="30.487" fill="#8900ff" rx="5.508" ry="30.487" transform="rotate(89.814 -19.197 -7.127)scale(1 -1)"/></g><g filter="url(#e)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.928 4.177)scale(1 -1)"/></g><g filter="url(#f)"><ellipse cx="5.508" cy="30.599" fill="#8900ff" rx="5.508" ry="30.599" transform="rotate(89.814 -25.738 5.52)scale(1 -1)"/></g><g filter="url(#g)"><ellipse cx="14.072" cy="22.078" fill="#eee6ff" rx="14.072" ry="22.078" transform="rotate(93.35 31.245 55.578)scale(-1 1)"/></g><g filter="url(#h)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#i)"><ellipse cx="3.47" cy="21.501" fill="#8900ff" rx="3.47" ry="21.501" transform="rotate(89.009 35.419 55.202)scale(-1 1)"/></g><g filter="url(#j)"><ellipse cx="14.592" cy="9.743" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(39.51 14.592 9.743)"/></g><g filter="url(#k)"><ellipse cx="61.728" cy="-5.321" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 61.728 -5.32)"/></g><g filter="url(#l)"><ellipse cx="55.618" cy="7.104" fill="#00c2ff" rx="5.971" ry="9.665" transform="rotate(37.892 55.618 7.104)"/></g><g filter="url(#m)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#n)"><ellipse cx="12.326" cy="39.103" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 12.326 39.103)"/></g><g filter="url(#o)"><ellipse cx="49.857" cy="30.678" fill="#8900ff" rx="4.407" ry="29.108" transform="rotate(37.892 49.857 30.678)"/></g><g filter="url(#p)"><ellipse cx="52.623" cy="33.171" fill="#00c2ff" rx="5.971" ry="15.297" transform="rotate(37.892 52.623 33.17)"/></g></g><path d="M6.919 0c-9.198 13.166-9.252 33.575 0 46.789h6.215c-9.25-13.214-9.196-33.623 0-46.789zm62.424 0h-6.215c9.198 13.166 9.252 33.575 0 46.789h6.215c9.25-13.214 9.196-33.623 0-46.789" class="parenthesis"/><defs><filter id="b" width="60.045" height="41.654" x="-5.564" y="16.92" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="c" width="90.34" height="51.437" x="-40.407" y="-6.762" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="d" width="79.355" height="29.4" x="-35.435" y="2.801" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="e" width="79.579" height="29.4" x="-30.84" y="20.8" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="f" width="79.579" height="29.4" x="-29.307" y="21.949" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="g" width="74.749" height="58.852" x="29.961" y="-17.13" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="7.659"/></filter><filter id="h" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="i" width="61.377" height="25.362" x="37.754" y="3.055" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="j" width="56.045" height="63.649" x="-13.43" y="-22.082" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="k" width="54.814" height="64.646" x="34.321" y="-37.644" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="l" width="33.541" height="35.313" x="38.847" y="-10.552" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="m" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="n" width="54.814" height="64.646" x="-15.081" y="6.78" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="o" width="54.814" height="64.646" x="22.45" y="-1.645" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter><filter id="p" width="39.409" height="43.623" x="32.919" y="11.36" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse"><feFlood flood-opacity="0" result="BackgroundImageFix"/><feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/><feGaussianBlur result="effect1_foregroundBlur_2002_17286" stdDeviation="4.596"/></filter></defs></svg>
+diff --git a/lhzx-h5/src/components/AppIcon.vue b/lhzx-h5/src/components/AppIcon.vue
+new file mode 100644
+index 0000000..4351457
+--- /dev/null
++++ b/lhzx-h5/src/components/AppIcon.vue
+@@ -0,0 +1,33 @@
++<template>
++  <svg
++    class="icon-svg app-icon"
++    xmlns="http://www.w3.org/2000/svg"
++    viewBox="0 0 24 24"
++    fill="none"
++    :width="size"
++    :height="size"
++    aria-hidden="true"
++    v-html="paths"
++  />
++</template>
++
++<script setup>
++import { computed } from 'vue'
++import { ICON_PATHS } from '@/constants/icons'
++
++const props = defineProps({
++  name: { type: String, required: true },
++  size: { type: [Number, String], default: 24 },
++})
++
++// 图标内容来自内部静态注册表，非用户输入，v-html 安全
++const paths = computed(() => ICON_PATHS[props.name] || '')
++</script>
++
++<style scoped>
++.app-icon {
++  display: inline-block;
++  color: inherit;
++  flex-shrink: 0;
++}
++</style>
+diff --git a/lhzx-h5/src/components/ShortVideoFeed.vue b/lhzx-h5/src/components/ShortVideoFeed.vue
+index f6efb3d..9f3340b 100644
+--- a/lhzx-h5/src/components/ShortVideoFeed.vue
++++ b/lhzx-h5/src/components/ShortVideoFeed.vue
+@@ -5,7 +5,7 @@
+     </div>
+ 
+     <div v-else-if="feedItems.length === 0" class="feed-empty">
+-      <t-icon name="video" size="48px" color="#666" />
++      <t-icon name="video" size="48px" color="rgba(255, 255, 255, 0.35)" />
+       <p>暂无视频内容</p>
+       <p class="feed-empty-hint">{{ emptyStorageHint }}</p>
+       <button v-if="showEmptyAction" type="button" class="empty-btn" @click="goCourses">
+@@ -741,7 +741,7 @@ watch(
+     padding: 2px 8px;
+     border: none;
+     border-radius: $radius-round;
+-    background: rgba(0, 82, 217, 0.85);
++    background: rgba(139, 26, 26, 0.85);
+     color: #fff;
+     font-size: 10px;
+     font-weight: $font-weight-semibold;
+diff --git a/lhzx-h5/src/components/WechatArticleSection.vue b/lhzx-h5/src/components/WechatArticleSection.vue
+index aa18fde..32066d1 100644
+--- a/lhzx-h5/src/components/WechatArticleSection.vue
++++ b/lhzx-h5/src/components/WechatArticleSection.vue
+@@ -2,11 +2,7 @@
+   <section class="wechat-article-section">
+     <div class="section-header">
+       <div class="section-title-row">
+-        <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-          <path d="M4 5H20V19H4V5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+-          <path d="M7 9H17M7 13H14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+-          <circle cx="18" cy="6" r="3" fill="currentColor"/>
+-        </svg>
++        <AppIcon name="article" class="section-icon" />
+         <h2 class="section-title">公众号精选</h2>
+         <span class="sync-badge" :class="syncStatusClass">{{ syncStatusText }}</span>
+       </div>
+@@ -37,10 +33,7 @@
+           :style="item.coverUrl ? { backgroundImage: `url(${item.coverUrl})` } : {}"
+         >
+           <div v-if="!item.coverUrl" class="cover-placeholder">
+-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-              <path d="M4 5H20V19H4V5Z" stroke="currentColor" stroke-width="1.4"/>
+-              <path d="M7 9H17M7 13H14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+-            </svg>
++            <AppIcon name="article-outline" />
+           </div>
+         </div>
+         <div class="article-body">
+@@ -61,6 +54,7 @@ import { ref, computed, onMounted } from 'vue'
+ import { useRouter } from 'vue-router'
+ import { getWechatArticles } from '@/utils/api'
+ import { formatDate } from '@/utils/index'
++import AppIcon from '@/components/AppIcon.vue'
+ 
+ const router = useRouter()
+ const articles = ref([])
+diff --git a/lhzx-h5/src/constants/icons.js b/lhzx-h5/src/constants/icons.js
+new file mode 100644
+index 0000000..ea48728
+--- /dev/null
++++ b/lhzx-h5/src/constants/icons.js
+@@ -0,0 +1,54 @@
++/**
++ * 品牌自定义线性图标注册表（24x24 viewBox，stroke: currentColor）
++ * 统一供 AppIcon 组件渲染，避免各页面重复内联 SVG。
++ * 通用功能图标请优先使用 TDesign 的 <t-icon>，此处仅存放品牌定制图标。
++ */
++export const ICON_PATHS = {
++  // 首页（屋檐 + 中心点）
++  home: `
++    <path d="M12 3L4 10V20H9V14H15V20H20V10L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
++    <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
++  `,
++  // 武学课堂（卷轴）
++  courses: `
++    <path d="M5 6H19V18H5V6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
++    <path d="M8 9H16M8 12H14M8 15H12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
++    <path d="M12 3V6M12 18V21" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
++  `,
++  // 咨询工单（文书 + 印记）
++  order: `
++    <path d="M14 3H6C4.89543 3 4 3.89543 4 5V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V9L14 3Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
++    <path d="M14 3V9H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
++    <path d="M8 13H16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
++    <path d="M8 17H13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
++    <circle cx="17" cy="17" r="3" fill="var(--brand-color, #8B1A1A)" stroke="#FFFFFF" stroke-width="1.2"/>
++  `,
++  // 团队（双人）
++  team: `
++    <circle cx="9" cy="7" r="3" stroke="currentColor" stroke-width="1.8"/>
++    <path d="M3 19C3 15.6863 5.68629 13 9 13C10.0929 13 11.1175 13.2922 12 13.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
++    <circle cx="17" cy="8" r="2.5" stroke="currentColor" stroke-width="1.8"/>
++    <path d="M14 20C14 17.7909 15.7909 16 18 16C19.1947 16 20.2671 16.5238 21 17.3368" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
++  `,
++  // 个人（单人）
++  user: `
++    <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
++    <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20V21H4V20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
++  `,
++  // 搜索（放大镜）
++  search: `
++    <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/>
++    <path d="M16 16L20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
++  `,
++  // 图文文章（页面 + 徽记）
++  article: `
++    <path d="M4 5H20V19H4V5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
++    <path d="M7 9H17M7 13H14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
++    <circle cx="18" cy="6" r="3" fill="currentColor"/>
++  `,
++  // 图文占位（页面线稿）
++  'article-outline': `
++    <path d="M4 5H20V19H4V5Z" stroke="currentColor" stroke-width="1.4"/>
++    <path d="M7 9H17M7 13H14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
++  `,
++}
+diff --git a/lhzx-h5/src/layouts/TabBarLayout.vue b/lhzx-h5/src/layouts/TabBarLayout.vue
+index 96a4125..e3914bb 100644
+--- a/lhzx-h5/src/layouts/TabBarLayout.vue
++++ b/lhzx-h5/src/layouts/TabBarLayout.vue
+@@ -12,33 +12,8 @@
+         @click.stop="onTabChange(item.value)"
+       >
+         <div class="tabbar-icon">
+-          <!-- 内联 SVG 图标，使用 currentColor 支持 CSS 颜色控制 -->
+-          <svg v-if="item.value === 'home'" class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-            <path d="M12 3L4 10V20H9V14H15V20H20V10L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+-            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+-          </svg>
+-          <svg v-else-if="item.value === 'courses'" class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-            <path d="M5 6H19V18H5V6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+-            <path d="M8 9H16M8 12H14M8 15H12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+-            <path d="M12 3V6M12 18V21" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+-          </svg>
+-          <svg v-else-if="item.value === 'order'" class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-            <path d="M14 3H6C4.89543 3 4 3.89543 4 5V19C4 20.1046 4.89543 21 6 21H18C19.1046 21 20 20.1046 20 19V9L14 3Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-            <path d="M14 3V9H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-            <path d="M8 13H16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-            <path d="M8 17H13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-            <circle cx="17" cy="17" r="3" fill="#8B1A1A" stroke="#FFFFFF" stroke-width="1.2"/>
+-          </svg>
+-          <svg v-else-if="item.value === 'team'" class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-            <circle cx="9" cy="7" r="3" stroke="currentColor" stroke-width="1.8"/>
+-            <path d="M3 19C3 15.6863 5.68629 13 9 13C10.0929 13 11.1175 13.2922 12 13.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-            <circle cx="17" cy="8" r="2.5" stroke="currentColor" stroke-width="1.8"/>
+-            <path d="M14 20C14 17.7909 15.7909 16 18 16C19.1947 16 20.2671 16.5238 21 17.3368" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-          </svg>
+-          <svg v-else-if="item.value === 'profile'" class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-            <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+-            <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20V21H4V20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-          </svg>
++          <!-- 品牌图标统一由 AppIcon 渲染（currentColor 支持 CSS 颜色控制） -->
++          <AppIcon :name="item.value === 'profile' ? 'user' : item.value" />
+           <!-- 未读角标 -->
+           <span v-if="item.badge" class="tabbar-badge">{{ item.badge }}</span>
+         </div>
+@@ -52,6 +27,7 @@
+ import { ref, computed, watch, reactive } from 'vue'
+ import { useRouter, useRoute } from 'vue-router'
+ import { useAppStore } from '../stores/app'
++import AppIcon from '../components/AppIcon.vue'
+ 
+ // TabBar 配置项（hidden: true 仅隐藏入口，路由与页面功能保留）
+ const tabItems = reactive([
+diff --git a/lhzx-h5/src/pages/activate-member/index.vue b/lhzx-h5/src/pages/activate-member/index.vue
+index ddf4afc..546655e 100644
+--- a/lhzx-h5/src/pages/activate-member/index.vue
++++ b/lhzx-h5/src/pages/activate-member/index.vue
+@@ -19,7 +19,7 @@
+     <!-- ========== 已是会员 ========== -->
+     <div class="already-member card-base" v-if="isMember">
+       <div class="am-icon">
+-        <t-icon name="check-circle" size="24px" color="#2BA471" />
++        <t-icon name="check-circle" size="24px" color="var(--success-color)" />
+       </div>
+       <div class="am-content">
+         <div class="am-label">您已是会员</div>
+diff --git a/lhzx-h5/src/pages/articles/index.vue b/lhzx-h5/src/pages/articles/index.vue
+index ff02656..4c5b682 100644
+--- a/lhzx-h5/src/pages/articles/index.vue
++++ b/lhzx-h5/src/pages/articles/index.vue
+@@ -33,7 +33,7 @@
+             <span>{{ formatPublishTime(item.publishTime) }}</span>
+           </div>
+         </div>
+-        <t-icon name="chevron-right" size="18px" color="#ccc" />
++        <t-icon name="chevron-right" size="18px" color="var(--text-color-placeholder)" />
+       </article>
+     </div>
+ 
+diff --git a/lhzx-h5/src/pages/assets/detail.vue b/lhzx-h5/src/pages/assets/detail.vue
+index 1390704..f789178 100644
+--- a/lhzx-h5/src/pages/assets/detail.vue
++++ b/lhzx-h5/src/pages/assets/detail.vue
+@@ -15,7 +15,7 @@
+     <template v-else-if="material">
+       <!-- 等级不足 -->
+       <div v-if="locked" class="lock-card card-base">
+-        <t-icon name="lock-on" size="48px" color="#D54941" />
++        <t-icon name="lock-on" size="48px" color="var(--error-color)" />
+         <h3>等级不足</h3>
+         <p>需要「{{ accessMeta?.requiredRoleName }}」及以上等级</p>
+       </div>
+diff --git a/lhzx-h5/src/pages/assets/index.vue b/lhzx-h5/src/pages/assets/index.vue
+index 9514e5e..f8557cb 100644
+--- a/lhzx-h5/src/pages/assets/index.vue
++++ b/lhzx-h5/src/pages/assets/index.vue
+@@ -18,7 +18,7 @@
+           <h3 class="ec-title">图片素材</h3>
+           <p class="ec-desc">海报图片、营销配图、宣传素材</p>
+         </div>
+-        <t-icon name="chevron-right" size="20px" color="#C0C4CC" class="ec-arrow" />
++        <t-icon name="chevron-right" size="20px" color="var(--text-color-placeholder)" class="ec-arrow" />
+       </div>
+     </div>
+   </div>
+diff --git a/lhzx-h5/src/pages/assets/text.vue b/lhzx-h5/src/pages/assets/text.vue
+index 82e966c..d9b487b 100644
+--- a/lhzx-h5/src/pages/assets/text.vue
++++ b/lhzx-h5/src/pages/assets/text.vue
+@@ -48,7 +48,7 @@
+         @click="goDetail(mat)"
+       >
+         <div class="tc-icon-wrap">
+-          <t-icon name="file" size="24px" color="#E37318" />
++          <t-icon name="file" size="24px" color="var(--warning-color)" />
+         </div>
+         <div class="tc-body">
+           <h4 class="tc-title">{{ mat.title }}</h4>
+@@ -73,7 +73,7 @@
+             </span>
+           </div>
+         </div>
+-        <t-icon name="chevron-right" size="18px" color="#C0C4CC" class="tc-arrow" />
++        <t-icon name="chevron-right" size="18px" color="var(--text-color-placeholder)" class="tc-arrow" />
+       </div>
+     </div>
+ 
+diff --git a/lhzx-h5/src/pages/bind-code/index.vue b/lhzx-h5/src/pages/bind-code/index.vue
+index 096b93b..5d776e8 100644
+--- a/lhzx-h5/src/pages/bind-code/index.vue
++++ b/lhzx-h5/src/pages/bind-code/index.vue
+@@ -62,7 +62,7 @@
+     <!-- ========== 已绑定信息 ========== -->
+     <div class="bind-info card-base" v-if="isLoggedIn && hasReferrer">
+       <div class="bi-icon">
+-        <t-icon name="user-checked" size="24px" color="#2BA471" />
++        <t-icon name="user-checked" size="24px" color="var(--success-color)" />
+       </div>
+       <div class="bi-content">
+         <div class="bi-label">已绑定老师</div>
+diff --git a/lhzx-h5/src/pages/courses/detail.vue b/lhzx-h5/src/pages/courses/detail.vue
+index cae9bd1..36c433c 100644
+--- a/lhzx-h5/src/pages/courses/detail.vue
++++ b/lhzx-h5/src/pages/courses/detail.vue
+@@ -49,7 +49,7 @@
+         </div>
+         <span class="meta-divider">|</span>
+         <div class="meta-item rating-item">
+-          <t-icon name="star-filled" size="14px" color="#E6A23C" />
++          <t-icon name="star-filled" size="14px" color="var(--gold-color)" />
+           <span>{{ course.rating || '暂无' }}</span>
+         </div>
+       </div>
+@@ -88,7 +88,7 @@
+                 <t-icon
+                   :name="expandedChapter === cIdx ? 'chevron-down' : 'chevron-right'"
+                   size="18px"
+-                  color="#666"
++                  color="var(--text-color-secondary)"
+                   class="expand-icon"
+                 />
+                 <span class="chapter-title">{{ chapter.title }}</span>
+@@ -148,7 +148,7 @@
+                   <div class="reviewer-info">
+                     <div class="reviewer-avatar">
+                       <img v-if="r.avatar" :src="r.avatar" class="avatar-img" />
+-                      <t-icon v-else name="user-circle" size="28px" color="#DCDEE0" />
++                      <t-icon v-else name="user-circle" size="28px" color="var(--border-color)" />
+                     </div>
+                     <div class="reviewer-detail">
+                       <span class="reviewer-name">{{ r.name }}</span>
+@@ -183,7 +183,7 @@
+                 <div class="form-header">
+                   <span class="form-title">课程评价</span>
+                   <button class="form-close" @click="showReviewForm = false">
+-                    <t-icon name="close" size="20px" color="#999" />
++                    <t-icon name="close" size="20px" color="var(--text-color-placeholder)" />
+                   </button>
+                 </div>
+                 <div class="form-field">
+@@ -943,7 +943,7 @@ onUnmounted(() => {
+       justify-content: center;
+       min-width: 100px;
+       padding: $spacing-4 $spacing-3;
+-      background: linear-gradient(160deg, rgba(0, 82, 217, 0.09) 0%, rgba(0, 82, 217, 0.02) 100%);
++      background: linear-gradient(160deg, rgba(139, 26, 26, 0.09) 0%, rgba(139, 26, 26, 0.02) 100%);
+ 
+       .summary-score {
+         font-size: 28px;
+@@ -1087,7 +1087,7 @@ onUnmounted(() => {
+       transition: all $transition-fast;
+ 
+       &:active {
+-        background: rgba(0, 82, 217, 0.06);
++        background: rgba(139, 26, 26, 0.06);
+         transform: scale(0.98);
+       }
+     }
+@@ -1150,7 +1150,7 @@ onUnmounted(() => {
+       :deep(.t-textarea__wrapper--focused) {
+         border-color: $brand-color;
+         background: $bg-color-container;
+-        box-shadow: 0 0 0 3px rgba(0, 82, 217, 0.08);
++        box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.08);
+       }
+ 
+       :deep(.t-textarea) {
+@@ -1183,7 +1183,7 @@ onUnmounted(() => {
+       font-size: $font-size;
+       font-weight: $font-weight-semibold;
+       cursor: pointer;
+-      box-shadow: 0 4px 12px rgba(0, 82, 217, 0.3);
++      box-shadow: 0 4px 12px rgba(139, 26, 26, 0.3);
+       transition: all $transition-fast;
+ 
+       &:active { transform: scale(0.98); }
+@@ -1276,7 +1276,7 @@ onUnmounted(() => {
+       width: 120px;
+       background: $brand-gradient;
+       color: #FFFFFF;
+-      box-shadow: 0 4px 12px rgba(0, 82, 217, 0.3);
++      box-shadow: 0 4px 12px rgba(139, 26, 26, 0.3);
+ 
+       &:active { transform: scale(0.97); }
+     }
+diff --git a/lhzx-h5/src/pages/courses/index.vue b/lhzx-h5/src/pages/courses/index.vue
+index 7f81e6e..749ab00 100644
+--- a/lhzx-h5/src/pages/courses/index.vue
++++ b/lhzx-h5/src/pages/courses/index.vue
+@@ -141,7 +141,7 @@
+           @click="selectSort(opt)"
+         >
+           <span>{{ opt.label }}</span>
+-          <t-icon v-if="selectedSort === opt.value" name="check" size="20px" color="#8B1A1A" />
++          <t-icon v-if="selectedSort === opt.value" name="check" size="20px" color="var(--brand-color)" />
+         </div>
+         <button class="panel-cancel" @click="showSortPopup = false">取消</button>
+       </div>
+@@ -566,7 +566,7 @@ function goDetail(course) {
+       color: #FFFFFF;
+ 
+       &.tag-hot { background: linear-gradient(135deg, #D54941, #FF6B6B); }
+-      &.tag-recommend { background: linear-gradient(135deg, #E37318, #FF9800); }
++      &.tag-recommend { background: linear-gradient(135deg, $brand-color, $brand-gold); }
+       &.tag-new { background: $brand-gradient; }
+       &.tag-lock { background: linear-gradient(135deg, #666, #999); }
+     }
+diff --git a/lhzx-h5/src/pages/home/index.vue b/lhzx-h5/src/pages/home/index.vue
+index 15accf5..f290bc2 100644
+--- a/lhzx-h5/src/pages/home/index.vue
++++ b/lhzx-h5/src/pages/home/index.vue
+@@ -35,10 +35,7 @@
+       </div>
+ 
+       <button type="button" class="nav-side-btn" aria-label="搜索" @click="handleSearch">
+-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="search-icon">
+-          <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8"/>
+-          <path d="M16 16L20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-        </svg>
++        <AppIcon name="search" class="search-icon" />
+       </button>
+     </header>
+ 
+@@ -60,6 +57,7 @@
+ import { ref, computed, watch } from 'vue'
+ import { useRouter, useRoute } from 'vue-router'
+ import ShortVideoFeed from '@/components/ShortVideoFeed.vue'
++import AppIcon from '@/components/AppIcon.vue'
+ import {
+   FEED_CHANNELS,
+   DEFAULT_FEED_CHANNEL,
+diff --git a/lhzx-h5/src/pages/learn/index.vue b/lhzx-h5/src/pages/learn/index.vue
+index 8a4505e..6fffabc 100644
+--- a/lhzx-h5/src/pages/learn/index.vue
++++ b/lhzx-h5/src/pages/learn/index.vue
+@@ -6,7 +6,7 @@
+     </div>
+ 
+     <div v-if="accessDenied" class="lock-card card-base">
+-      <t-icon name="lock-on" size="48px" color="#D54941" />
++      <t-icon name="lock-on" size="48px" color="var(--error-color)" />
+       <h3>等级不足</h3>
+       <p>需要「{{ accessMeta?.requiredRoleName }}」及以上等级才可学习</p>
+       <p class="sub">当前等级：{{ accessMeta?.userRoleName }}</p>
+diff --git a/lhzx-h5/src/pages/login/index.vue b/lhzx-h5/src/pages/login/index.vue
+index 10892c3..c3616bc 100644
+--- a/lhzx-h5/src/pages/login/index.vue
++++ b/lhzx-h5/src/pages/login/index.vue
+@@ -343,14 +343,14 @@ onUnmounted(() => {
+   :deep(.t-input) {
+     height: 48px;
+     border-radius: $radius-medium;
+-    background: #F7F9FC;
++    background: $bg-color-secondarycontainer;
+     border: 1.5px solid transparent;
+   }
+ 
+   :deep(.t-input--focused) {
+     border-color: $brand-color;
+-    background: #FFFFFF;
+-    box-shadow: 0 0 0 3px rgba(0, 82, 217, 0.08);
++    background: $bg-color-container;
++    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.08);
+   }
+ }
+ 
+diff --git a/lhzx-h5/src/pages/material/index.vue b/lhzx-h5/src/pages/material/index.vue
+index 4504bd1..7a0b54d 100644
+--- a/lhzx-h5/src/pages/material/index.vue
++++ b/lhzx-h5/src/pages/material/index.vue
+@@ -8,7 +8,7 @@
+     <div v-if="loading" class="loading-wrap"><t-loading text="加载中..." /></div>
+ 
+     <div v-else-if="locked" class="lock-card card-base">
+-      <t-icon name="lock-on" size="48px" color="#D54941" />
++      <t-icon name="lock-on" size="48px" color="var(--error-color)" />
+       <h3>等级不足</h3>
+       <p>需要「{{ accessMeta?.requiredRoleName }}」及以上等级</p>
+     </div>
+diff --git a/lhzx-h5/src/pages/my-enrollments/index.vue b/lhzx-h5/src/pages/my-enrollments/index.vue
+index eb41ef7..e6df464 100644
+--- a/lhzx-h5/src/pages/my-enrollments/index.vue
++++ b/lhzx-h5/src/pages/my-enrollments/index.vue
+@@ -2,7 +2,7 @@
+   <div class="page-container enrollments-page">
+     <div class="page-navbar">
+       <button class="nav-back-btn" type="button" aria-label="返回" @click="goBack">
+-        <t-icon name="chevron-left" size="20px" color="#303133" />
++        <t-icon name="chevron-left" size="20px" color="var(--text-color-primary)" />
+       </button>
+       <span class="nav-title">我的报名</span>
+     </div>
+@@ -69,7 +69,7 @@
+     </div>
+ 
+     <div class="page-empty" v-else>
+-      <t-icon name="file-paste" size="64px" color="#DCDEE0" />
++      <t-icon name="file-paste" size="64px" color="var(--border-color)" />
+       <p>暂无报名记录</p>
+       <p class="empty-hint">去课堂挑选课程，报名即可开始学习</p>
+       <t-button theme="primary" size="medium" @click="router.push('/courses')">去选课</t-button>
+@@ -318,7 +318,7 @@ onMounted(() => {
+     padding: 2px 8px;
+     border-radius: 4px;
+ 
+-    &.status-active { color: $brand-color; background: rgba(0, 82, 217, 0.1); }
++    &.status-active { color: $brand-color; background: rgba(139, 26, 26, 0.08); }
+     &.status-completed { color: $success-color; background: rgba(0, 168, 112, 0.1); }
+     &.status-expired { color: $text-color-placeholder; background: $bg-color-secondarycontainer; }
+   }
+diff --git a/lhzx-h5/src/pages/my-learning/index.vue b/lhzx-h5/src/pages/my-learning/index.vue
+index a641c42..3c47803 100644
+--- a/lhzx-h5/src/pages/my-learning/index.vue
++++ b/lhzx-h5/src/pages/my-learning/index.vue
+@@ -2,7 +2,7 @@
+   <div class="page-container learning-page">
+     <div class="page-navbar">
+       <button class="nav-back-btn" type="button" aria-label="返回" @click="goBack">
+-        <t-icon name="chevron-left" size="20px" color="#303133" />
++        <t-icon name="chevron-left" size="20px" color="var(--text-color-primary)" />
+       </button>
+       <span class="nav-title">学习记录</span>
+     </div>
+@@ -60,7 +60,7 @@
+     </div>
+ 
+     <div class="page-empty" v-else>
+-      <t-icon name="book-open" size="64px" color="#DCDEE0" />
++      <t-icon name="book-open" size="64px" color="var(--border-color)" />
+       <p>暂无学习记录</p>
+       <p class="empty-hint">报名课程后即可在此查看学习进度</p>
+       <t-button theme="primary" size="medium" @click="router.push('/courses')">去选课</t-button>
+diff --git a/lhzx-h5/src/pages/order/form.vue b/lhzx-h5/src/pages/order/form.vue
+index 05a22ab..5b4bb0b 100644
+--- a/lhzx-h5/src/pages/order/form.vue
++++ b/lhzx-h5/src/pages/order/form.vue
+@@ -70,7 +70,7 @@
+               <t-icon name="check-circle-filled" size="20px" :color="THEME.brand" />
+             </div>
+             <div class="business-item-check" v-else>
+-              <t-icon name="check-circle" size="20px" color="#BFC4CF" />
++              <t-icon name="check-circle" size="20px" color="var(--text-color-placeholder)" />
+             </div>
+           </div>
+         </div>
+diff --git a/lhzx-h5/src/pages/points-exchange/index.vue b/lhzx-h5/src/pages/points-exchange/index.vue
+index 9fe283b..0a17c18 100644
+--- a/lhzx-h5/src/pages/points-exchange/index.vue
++++ b/lhzx-h5/src/pages/points-exchange/index.vue
+@@ -2,13 +2,13 @@
+   <div class="page-container points-exchange-page">
+     <div class="page-header">
+       <button class="header-back-btn" @click="$router.back()" aria-label="返回">
+-        <t-icon name="chevron-left" size="20px" color="#303133" />
++        <t-icon name="chevron-left" size="20px" color="var(--text-color-primary)" />
+       </button>
+       <h1 class="header-title">积分兑换</h1>
+       <span class="header-placeholder"></span>
+     </div>
+     <div class="empty-state">
+-      <t-icon name="swap" size="48px" color="#C0C4CC" />
++      <t-icon name="swap" size="48px" color="var(--text-color-placeholder)" />
+       <p>暂无可兑换商品</p>
+     </div>
+   </div>
+diff --git a/lhzx-h5/src/pages/points-ledger/index.vue b/lhzx-h5/src/pages/points-ledger/index.vue
+index c7a9fc9..e18fcab 100644
+--- a/lhzx-h5/src/pages/points-ledger/index.vue
++++ b/lhzx-h5/src/pages/points-ledger/index.vue
+@@ -2,13 +2,13 @@
+   <div class="page-container points-ledger-page">
+     <div class="page-header">
+       <button class="header-back-btn" @click="$router.back()" aria-label="返回">
+-        <t-icon name="chevron-left" size="20px" color="#303133" />
++        <t-icon name="chevron-left" size="20px" color="var(--text-color-primary)" />
+       </button>
+       <h1 class="header-title">积分流水</h1>
+       <span class="header-placeholder"></span>
+     </div>
+     <div class="empty-state">
+-      <t-icon name="assignment" size="48px" color="#C0C4CC" />
++      <t-icon name="assignment" size="48px" color="var(--text-color-placeholder)" />
+       <p>暂无积分记录</p>
+     </div>
+   </div>
+diff --git a/lhzx-h5/src/pages/profile/index.vue b/lhzx-h5/src/pages/profile/index.vue
+index 74b9258..edf7924 100644
+--- a/lhzx-h5/src/pages/profile/index.vue
++++ b/lhzx-h5/src/pages/profile/index.vue
+@@ -91,7 +91,7 @@
+           </div>
+           <div class="si-right">
+             <t-tag v-if="service.badge" :theme="service.badgeTheme" size="small" shape="round" variant="light">{{ service.badge }}</t-tag>
+-            <t-icon name="chevron-right" size="16px" color="#C0C4CC" />
++            <t-icon name="chevron-right" size="16px" color="var(--text-color-placeholder)" />
+           </div>
+         </div>
+       </div>
+diff --git a/lhzx-h5/src/pages/profile/messages.vue b/lhzx-h5/src/pages/profile/messages.vue
+index 4f22736..3f06fe8 100644
+--- a/lhzx-h5/src/pages/profile/messages.vue
++++ b/lhzx-h5/src/pages/profile/messages.vue
+@@ -2,7 +2,7 @@
+   <div class="page-container messages-page">
+     <div class="page-header">
+       <button class="header-back-btn" @click="handleBack" aria-label="返回">
+-        <t-icon name="chevron-left" size="20px" color="#303133" />
++        <t-icon name="chevron-left" size="20px" color="var(--text-color-primary)" />
+       </button>
+       <span>消息通知</span>
+     </div>
+@@ -58,14 +58,14 @@
+             <p class="msg-summary">{{ msg.summary }}</p>
+           </div>
+           <!-- 右箭头（未读时显示） -->
+-          <t-icon name="chevron-right" size="16px" color="#C0C4CC" class="msg-arrow" v-if="!msg.read" />
++          <t-icon name="chevron-right" size="16px" color="var(--text-color-placeholder)" class="msg-arrow" v-if="!msg.read" />
+         </div>
+       </t-swipe-cell>
+     </div>
+ 
+     <!-- 空状态 -->
+     <div class="msg-empty" v-else>
+-      <t-icon name="notification" size="64px" color="#DCDEE0" />
++      <t-icon name="notification" size="64px" color="var(--border-color)" />
+       <p>暂无消息</p>
+     </div>
+   </div>
+@@ -306,7 +306,7 @@ function handleBack() {
+   cursor: pointer;
+ 
+   &.is-unread {
+-    background: #FAFBFF;
++    background: $brand-color-lighter;
+ 
+     .msg-title { font-weight: $font-weight-bold; }
+   }
+diff --git a/lhzx-h5/src/pages/purchase/index.vue b/lhzx-h5/src/pages/purchase/index.vue
+index 3a15811..4c4df97 100644
+--- a/lhzx-h5/src/pages/purchase/index.vue
++++ b/lhzx-h5/src/pages/purchase/index.vue
+@@ -2,7 +2,7 @@
+   <div class="page-container purchase-page">
+     <div class="purchase-navbar">
+       <button class="nav-back-btn" @click="goBack" aria-label="返回">
+-        <t-icon name="chevron-left" size="20px" color="#303133" />
++        <t-icon name="chevron-left" size="20px" color="var(--text-color-primary)" />
+       </button>
+       <span class="nav-title">{{ pageCopy.navTitle }}</span>
+     </div>
+@@ -47,7 +47,7 @@
+         <!-- 特权清单 -->
+         <div class="pkg-features">
+           <div v-for="(feature, idx) in pkg.features" :key="idx" class="feature-row">
+-            <t-icon name="check-circle-filled" size="16px" color="#2BA471" />
++            <t-icon name="check-circle-filled" size="16px" color="var(--success-color)" />
+             <span>{{ feature }}</span>
+           </div>
+         </div>
+@@ -319,7 +319,7 @@ function goBack() {
+       background: $brand-gradient;
+       border-color: transparent;
+       color: #FFFFFF;
+-      box-shadow: 0 4px 14px rgba(0, 82, 217, 0.35);
++      box-shadow: 0 4px 14px rgba(139, 26, 26, 0.35);
+     }
+ 
+     &:active { transform: scale(0.98); }
+diff --git a/lhzx-h5/src/pages/register/index.vue b/lhzx-h5/src/pages/register/index.vue
+index f238324..c0f55ef 100644
+--- a/lhzx-h5/src/pages/register/index.vue
++++ b/lhzx-h5/src/pages/register/index.vue
+@@ -299,14 +299,14 @@ onUnmounted(() => {
+   :deep(.t-input) {
+     height: 48px;
+     border-radius: $radius-medium;
+-    background: #F7F9FC;
++    background: $bg-color-secondarycontainer;
+     border: 1.5px solid transparent;
+   }
+ 
+   :deep(.t-input--focused) {
+     border-color: $brand-color;
+-    background: #FFFFFF;
+-    box-shadow: 0 0 0 3px rgba(0, 82, 217, 0.08);
++    background: $bg-color-container;
++    box-shadow: 0 0 0 3px rgba(139, 26, 26, 0.08);
+   }
+ }
+ 
+diff --git a/lhzx-h5/src/pages/team/index.vue b/lhzx-h5/src/pages/team/index.vue
+index b7613cf..34d5810 100644
+--- a/lhzx-h5/src/pages/team/index.vue
++++ b/lhzx-h5/src/pages/team/index.vue
+@@ -6,12 +6,7 @@
+       <div class="header-content">
+         <div class="header-top">
+           <div class="header-icon">
+-            <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+-              <circle cx="9" cy="7" r="3" stroke="currentColor" stroke-width="1.8"/>
+-              <path d="M3 19C3 15.6863 5.68629 13 9 13C10.0929 13 11.1175 13.2922 12 13.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-              <circle cx="17" cy="8" r="2.5" stroke="currentColor" stroke-width="1.8"/>
+-              <path d="M14 20C14 17.7909 15.7909 16 18 16C19.1947 16 20.2671 16.5238 21 17.3368" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+-            </svg>
++            <AppIcon name="team" />
+           </div>
+           <div class="header-text">
+             <h2 class="header-title">我的市场</h2>
+@@ -59,10 +54,7 @@
+           class="member-item"
+         >
+           <div class="member-avatar" :class="getAvatarClass(index)">
+-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" width="20" height="20">
+-              <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/>
+-              <path d="M4 20C4 16.6863 6.68629 14 10 14H14C17.3137 14 20 16.6863 20 20V21H4V20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+-            </svg>
++            <AppIcon name="user" size="20" />
+           </div>
+           <div class="member-info">
+             <div class="member-name">{{ member.name }}</div>
+@@ -132,6 +124,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
+ import { Toast } from 'tdesign-mobile-vue'
+ import { getTeamInfo } from '@/utils/api'
+ import { useUserStore } from '../../stores/user'
++import AppIcon from '@/components/AppIcon.vue'
+ 
+ const userStore = useUserStore()
+ const loading = ref(false)
+@@ -377,14 +370,15 @@ onMounted(() => {
+   flex-shrink: 0;
+ 
+   svg {
+-    color: #FFFFFF;
++    color: $text-color-anti;
+   }
+ 
++  // 头像渐变：与武学主题同源（朱砂 / 鎏金 / 墨韵 / 赭石 / 松绿）
+   &.avatar-blue { background: $brand-gradient; }
+-  &.avatar-orange { background: linear-gradient(135deg, #E37318, #FF9800); }
+-  &.avatar-green { background: linear-gradient(135deg, #2BA471, #4CAF50); }
+-  &.avatar-purple { background: linear-gradient(135deg, #7C3AED, #A78BFA); }
+-  &.avatar-cyan { background: linear-gradient(135deg, #00A8E8, #00D4FF); }
++  &.avatar-orange { background: linear-gradient(135deg, #B8722C, $brand-gold); }
++  &.avatar-green { background: linear-gradient(135deg, #3F6B4F, #6E9A7C); }
++  &.avatar-purple { background: linear-gradient(135deg, $brand-ink-soft, #6B5744); }
++  &.avatar-cyan { background: linear-gradient(135deg, $brand-color-dark, $brand-color-hover); }
+ }
+ 
+ .member-info {
+diff --git a/lhzx-h5/src/pages/video-player/index.vue b/lhzx-h5/src/pages/video-player/index.vue
+index a271ece..b4532da 100644
+--- a/lhzx-h5/src/pages/video-player/index.vue
++++ b/lhzx-h5/src/pages/video-player/index.vue
+@@ -42,13 +42,13 @@
+ 
+       <!-- 无视频占位 -->
+       <div class="no-video-container" v-else-if="currentLesson && !currentLesson.hasVideo">
+-        <t-icon name="video-off" size="48px" color="#DCDEE0" />
++        <t-icon name="video-off" size="48px" color="var(--border-color)" />
+         <p>该课时暂无视频</p>
+       </div>
+ 
+       <!-- 锁定状态 -->
+       <div class="locked-container" v-else-if="currentLesson && currentLesson.locked">
+-        <t-icon name="lock-on" size="48px" color="#D54941" />
++        <t-icon name="lock-on" size="48px" color="var(--error-color)" />
+         <p>{{ accessDenied ? '等级不足，无法观看' : '请先报名课程' }}</p>
+         <t-button v-if="!accessDenied" theme="primary" size="small" @click="goCourseDetail">去报名</t-button>
+       </div>
+@@ -64,7 +64,7 @@
+             </span>
+             <span class="meta-item free-tag" v-if="currentLesson.isFree">免费试看</span>
+             <span class="meta-item completed-tag" v-if="currentLesson.completed">
+-              <t-icon name="check-circle-filled" size="14px" color="#2BA471" />
++              <t-icon name="check-circle-filled" size="14px" color="var(--success-color)" />
+               已完成
+             </span>
+           </div>
+@@ -101,8 +101,8 @@
+             @click="selectLesson(idx)"
+           >
+             <div class="lesson-index">
+-              <t-icon v-if="lesson.completed" name="check-circle-filled" size="18px" color="#2BA471" />
+-              <t-icon v-else-if="lesson.locked" name="lock-on" size="18px" color="#DCDEE0" />
++              <t-icon v-if="lesson.completed" name="check-circle-filled" size="18px" color="var(--success-color)" />
++              <t-icon v-else-if="lesson.locked" name="lock-on" size="18px" color="var(--border-color)" />
+               <span v-else class="index-num">{{ idx + 1 }}</span>
+             </div>
+             <div class="lesson-content">
+@@ -565,7 +565,7 @@ onUnmounted(() => {
+     backdrop-filter: blur(4px);
+     transition: all $transition-fast;
+ 
+-    &:active { background: rgba(0, 82, 217, 0.6); }
++    &:active { background: rgba(139, 26, 26, 0.6); }
+   }
+ }
+ 
+@@ -678,7 +678,7 @@ onUnmounted(() => {
+ 
+       &.active {
+         background: $brand-color-lighter;
+-        border: 1px solid rgba(0, 82, 217, 0.15);
++        border: 1px solid rgba(139, 26, 26, 0.15);
+ 
+         .lesson-name { color: $brand-color; font-weight: $font-weight-medium; }
+       }
+@@ -839,7 +839,7 @@ onUnmounted(() => {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+-    box-shadow: 0 4px 14px rgba(0, 82, 217, 0.28);
++    box-shadow: 0 4px 14px rgba(139, 26, 26, 0.28);
+   }
+ 
+   .ctrl-btn--speed {
+diff --git a/lhzx-h5/src/stores/app.js b/lhzx-h5/src/stores/app.js
+index 1981816..16ac813 100644
+--- a/lhzx-h5/src/stores/app.js
++++ b/lhzx-h5/src/stores/app.js
+@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
+ import { ref } from 'vue'
+ 
+ export const useAppStore = defineStore('app', () => {
+-  const activeTab = ref('courses')
++  // 与路由默认 redirect（/home）保持一致，避免首屏 Tab 高亮闪烁
++  const activeTab = ref('home')
+ 
+   function setActiveTab(tab) {
+     activeTab.value = tab
+diff --git a/lhzx-h5/src/styles/common.scss b/lhzx-h5/src/styles/common.scss
+deleted file mode 100644
+index 778514b..0000000
+--- a/lhzx-h5/src/styles/common.scss
++++ /dev/null
+@@ -1,103 +0,0 @@
+-// 公共组件样式 - 鹿功汇 H5
+-@use './tokens' as *;
+-
+-// ========== 登录页公共样式 ==========
+-.login-gradient-bg {
+-  background: $brand-gradient-deep;
+-}
+-
+-.login-card {
+-  background: #FFFFFF;
+-  border-radius: $radius-extra-large $radius-extra-large 0 0;
+-  padding: $spacing-6 $spacing-6 0;
+-  min-height: 60vh;
+-}
+-
+-// ========== 首页公共样式 ==========
+-.section-title {
+-  display: flex;
+-  align-items: center;
+-  justify-content: space-between;
+-  padding: $spacing-5 $spacing-4 $spacing-3;
+-  font-size: $font-size-title-medium;
+-  font-weight: $font-weight-bold;
+-  color: $text-color-primary;
+-
+-  .section-more {
+-    font-size: $font-size-body-small;
+-    font-weight: $font-weight-regular;
+-    color: $text-color-placeholder;
+-    display: flex;
+-    align-items: center;
+-    gap: 2px;
+-  }
+-}
+-
+-// ========== 课程卡片 ==========
+-.course-card {
+-  background: $bg-color-container;
+-  border-radius: $radius-medium;
+-  overflow: hidden;
+-  box-shadow: $shadow-1;
+-
+-  .course-cover {
+-    width: 100%;
+-    height: 160px;
+-    background: $bg-color-secondarycontainer;
+-    display: flex;
+-    align-items: center;
+-    justify-content: center;
+-    color: $text-color-placeholder;
+-    font-size: $font-size-body-small;
+-    position: relative;
+-
+-    img {
+-      width: 100%;
+-      height: 100%;
+-      object-fit: cover;
+-    }
+-
+-    .course-tag {
+-      position: absolute;
+-      top: $spacing-2;
+-      left: $spacing-2;
+-    }
+-  }
+-
+-  .course-info {
+-    padding: $spacing-3;
+-
+-    .course-name {
+-      font-size: $font-size;
+-      font-weight: $font-weight-medium;
+-      color: $text-color-primary;
+-      line-height: $line-height-s;
+-      display: -webkit-box;
+-      -webkit-line-clamp: 2;
+-      -webkit-box-orient: vertical;
+-      overflow: hidden;
+-      margin-bottom: $spacing-2;
+-    }
+-
+-    .course-bottom {
+-      display: flex;
+-      align-items: center;
+-      justify-content: space-between;
+-
+-      .course-price {
+-        font-size: $font-size-title-small;
+-        font-weight: $font-weight-bold;
+-        color: $error-color;
+-
+-        .price-symbol {
+-          font-size: $font-size-body-small;
+-        }
+-      }
+-
+-      .course-students {
+-        font-size: $font-size-body-small;
+-        color: $text-color-placeholder;
+-      }
+-    }
+-  }
+-}
+diff --git a/lhzx-h5/src/styles/global.scss b/lhzx-h5/src/styles/global.scss
+index cee67b6..f335cac 100644
+--- a/lhzx-h5/src/styles/global.scss
++++ b/lhzx-h5/src/styles/global.scss
+@@ -3,9 +3,45 @@
+ // CSS 变量：供 JS / 内联样式 / 第三方组件读取，与 tokens 同源
+ :root {
+   --brand-color: #{$brand-color};
++  --brand-color-hover: #{$brand-color-hover};
++  --brand-color-active: #{$brand-color-active};
++  --brand-color-light: #{$brand-color-light};
+   --brand-gold: #{$brand-gold};
++  --brand-gold-light: #{$brand-gold-light};
+   --brand-ink: #{$brand-ink};
+   --brand-gradient: #{$brand-gradient};
++  --brand-gradient-deep: #{$brand-gradient-deep};
++
++  --text-color-primary: #{$text-color-primary};
++  --text-color-secondary: #{$text-color-secondary};
++  --text-color-placeholder: #{$text-color-placeholder};
++  --text-color-disabled: #{$text-color-disabled};
++
++  --error-color: #{$error-color};
++  --warning-color: #{$warning-color};
++  --success-color: #{$success-color};
++  --gold-color: #{$gold-color};
++  --border-color: #{$border-color};
++
++  // ===== TDesign Mobile 主题覆盖：默认蓝 → 品牌朱砂红 =====
++  --td-brand-color: #{$brand-color};
++  --td-brand-color-hover: #{$brand-color-hover};
++  --td-brand-color-active: #{$brand-color-active};
++  --td-brand-color-focus: rgba(139, 26, 26, 0.2);
++  --td-brand-color-disabled: #E8B7B4;
++  --td-brand-color-light: #{$brand-color-light};
++  --td-brand-color-light-active: #F6E3DE;
++  // 品牌色阶（TDesign 组件内部按 1-10 取用，7 为主色）
++  --td-brand-color-1: #FDF5F0;
++  --td-brand-color-2: #F6E0DA;
++  --td-brand-color-3: #EDC2BA;
++  --td-brand-color-4: #DE9A8F;
++  --td-brand-color-5: #C96A5F;
++  --td-brand-color-6: #A93F38;
++  --td-brand-color-7: #{$brand-color};
++  --td-brand-color-8: #741414;
++  --td-brand-color-9: #5C0F0F;
++  --td-brand-color-10: #{$brand-color-dark};
+ }
+ 
+ // ========== CSS Reset ==========
+@@ -84,7 +120,7 @@ img {
+ .text-primary { color: $text-color-brand; }
+ .text-secondary { color: $text-color-secondary; }
+ .text-placeholder { color: $text-color-placeholder; }
+-.text-white { color: #FFFFFF; }
++.text-white { color: $text-color-anti; }
+ .text-error { color: $error-color; }
+ .text-warning { color: $warning-color; }
+ .text-success { color: $success-color; }
+-- 
+2.43.0
+
+
+From e0308277111d3bc1313e125b0d2886301df89a16 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Sun, 5 Jul 2026 16:12:31 +0000
+Subject: [PATCH 2/2] =?UTF-8?q?refactor(lhzx-admin):=20=E9=87=8D=E6=9E=84?=
+ =?UTF-8?q?=E5=90=8E=E5=8F=B0=20UI=20=E4=B8=8E=E5=9B=BE=E6=A0=87=E4=BD=93?=
+ =?UTF-8?q?=E7=B3=BB?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- main.css 落地 PRD design tokens（--td-* 主题变量 + 语义色 + 布局变量）
+- 侧边栏重构：菜单配置抽取至 constants/menus.js，全部菜单加 TDesign 图标，
+  新增品牌标识区与可折叠侧边栏（状态持久化）
+- 顶栏加用户图标与退出按钮图标
+- 登录页：密码可见性切换、回车提交、品牌 token 化配色
+- Logo 色统一为品牌蓝 #0052D9，新增 logo-mark.svg 侧边栏标识
+- 全局收敛 .w-* / .pagination-wrap / .action-group 重复工具类（10+ 视图去重）
+- 清理硬编码色（#E34D59/#dc2626/#059669/#111827/#0052d9 → CSS 变量）
+- RoleManageView .section-title 与全局类冲突改名 .subsection-title
+- RichEditor 边框接入 token，移除 lucide-vue-next 死依赖
+---
+ lhzx-admin/package-lock.json              |  10 --
+ lhzx-admin/package.json                   |   2 +-
+ lhzx-admin/src/assets/logo-mark.svg       |   6 +
+ lhzx-admin/src/assets/logo.svg            |   2 +-
+ lhzx-admin/src/assets/main.css            |  43 +++++-
+ lhzx-admin/src/components/FileUpload.vue  |   2 +-
+ lhzx-admin/src/components/ImageUpload.vue |   2 +-
+ lhzx-admin/src/components/RichEditor.vue  |  16 ++-
+ lhzx-admin/src/constants/menus.js         |  35 +++++
+ lhzx-admin/src/layouts/AdminLayout.vue    | 153 ++++++++++++++++------
+ lhzx-admin/src/views/CoursesView.vue      |  25 +---
+ lhzx-admin/src/views/DashboardView.vue    |   4 +-
+ lhzx-admin/src/views/LoginView.vue        |  32 ++++-
+ lhzx-admin/src/views/LogsView.vue         |  17 +--
+ lhzx-admin/src/views/MaterialsView.vue    |  14 +-
+ lhzx-admin/src/views/MessagesView.vue     |   5 -
+ lhzx-admin/src/views/OrderDetailView.vue  |   2 +-
+ lhzx-admin/src/views/OrdersView.vue       |  21 +--
+ lhzx-admin/src/views/PointsView.vue       |  29 +---
+ lhzx-admin/src/views/RoleManageView.vue   |   8 +-
+ lhzx-admin/src/views/ServicesView.vue     |   5 +-
+ lhzx-admin/src/views/SettingsView.vue     |   4 +-
+ lhzx-admin/src/views/UserDetailView.vue   |   2 +-
+ lhzx-admin/src/views/UsersView.vue        |  17 +--
+ lhzx-h5/src/assets/icons/logo-seal.svg    |   4 +-
+ 25 files changed, 261 insertions(+), 199 deletions(-)
+ create mode 100644 lhzx-admin/src/assets/logo-mark.svg
+ create mode 100644 lhzx-admin/src/constants/menus.js
+
+diff --git a/lhzx-admin/package-lock.json b/lhzx-admin/package-lock.json
+index d9a4137..1ed952f 100644
+--- a/lhzx-admin/package-lock.json
++++ b/lhzx-admin/package-lock.json
+@@ -14,7 +14,6 @@
+         "dayjs": "^1.11.13",
+         "dompurify": "^3.2.0",
+         "echarts": "^5.6.0",
+-        "lucide-vue-next": "^0.470.0",
+         "pinia": "^3.0.4",
+         "tdesign-icons-vue-next": "^0.3.6",
+         "tdesign-vue-next": "^1.13.1",
+@@ -2470,15 +2469,6 @@
+       "integrity": "sha512-QyffEA3i5dma5q2490+SgCvDN0pXLmRGSyAANuVi0HQ01Pkfr9fuoKQW8wm1wGBnJITs/mS7wQvS6VshUEBFCw==",
+       "license": "MIT"
+     },
+-    "node_modules/lucide-vue-next": {
+-      "version": "0.470.0",
+-      "resolved": "https://registry.npmjs.org/lucide-vue-next/-/lucide-vue-next-0.470.0.tgz",
+-      "integrity": "sha512-hqcVn93ghGJIEFo1MiQuy0PrZbp5nHZZcSxumZ+0qIRYy+f7e0ngVTsFOiQYL2Gl1YZ+PQR0WJkIDH5MCp3gGw==",
+-      "license": "ISC",
+-      "peerDependencies": {
+-        "vue": ">=3.0.1"
+-      }
+-    },
+     "node_modules/magic-string": {
+       "version": "0.30.21",
+       "resolved": "https://registry.npmjs.org/magic-string/-/magic-string-0.30.21.tgz",
+diff --git a/lhzx-admin/package.json b/lhzx-admin/package.json
+index e178a0c..521aa1e 100644
+--- a/lhzx-admin/package.json
++++ b/lhzx-admin/package.json
+@@ -1 +1 @@
+-{"name":"lhzx-admin","private":true,"version":"1.0.0","type":"module","scripts":{"dev":"vite","build":"vite build","preview":"vite preview"},"dependencies":{"@cloudbase/js-sdk":"^3.3.3","@wangeditor/editor":"^5.1.23","@wangeditor/editor-for-vue":"^5.1.12","dayjs":"^1.11.13","dompurify":"^3.2.0","echarts":"^5.6.0","lucide-vue-next":"^0.470.0","pinia":"^3.0.4","tdesign-icons-vue-next":"^0.3.6","tdesign-vue-next":"^1.13.1","vue":"^3.5.32","vue-echarts":"^7.0.3","vue-router":"^4.6.4"},"devDependencies":{"@playwright/test":"^1.61.0","@vitejs/plugin-vue":"^6.0.5","autoprefixer":"^10.4.20","postcss":"^8.5.1","tailwind-merge":"^2.5.5","tailwindcss":"^3.4.17","vite":"^5.4.11"}}
+\ No newline at end of file
++{"name":"lhzx-admin","private":true,"version":"1.0.0","type":"module","scripts":{"dev":"vite","build":"vite build","preview":"vite preview"},"dependencies":{"@cloudbase/js-sdk":"^3.3.3","@wangeditor/editor":"^5.1.23","@wangeditor/editor-for-vue":"^5.1.12","dayjs":"^1.11.13","dompurify":"^3.2.0","echarts":"^5.6.0","pinia":"^3.0.4","tdesign-icons-vue-next":"^0.3.6","tdesign-vue-next":"^1.13.1","vue":"^3.5.32","vue-echarts":"^7.0.3","vue-router":"^4.6.4"},"devDependencies":{"@playwright/test":"^1.61.0","@vitejs/plugin-vue":"^6.0.5","autoprefixer":"^10.4.20","postcss":"^8.5.1","tailwind-merge":"^2.5.5","tailwindcss":"^3.4.17","vite":"^5.4.11"}}
+\ No newline at end of file
+diff --git a/lhzx-admin/src/assets/logo-mark.svg b/lhzx-admin/src/assets/logo-mark.svg
+new file mode 100644
+index 0000000..43c67a5
+--- /dev/null
++++ b/lhzx-admin/src/assets/logo-mark.svg
+@@ -0,0 +1,6 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
++  <rect width="32" height="32" rx="8" fill="#0052D9"/>
++  <path d="M8 10h16M8 16h12M8 22h8" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
++  <circle cx="24" cy="22" r="4" fill="#D48806"/>
++  <path d="M22.5 22l1 1 2-2" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
++</svg>
+diff --git a/lhzx-admin/src/assets/logo.svg b/lhzx-admin/src/assets/logo.svg
+index fd8cc02..72752fd 100644
+--- a/lhzx-admin/src/assets/logo.svg
++++ b/lhzx-admin/src/assets/logo.svg
+@@ -1,5 +1,5 @@
+ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 718 612" width="100%" height="100%">
+-  <g transform="translate(0,612) scale(0.1,-0.1)" fill="#083E67">
++  <g transform="translate(0,612) scale(0.1,-0.1)" fill="#0052D9">
+     <path d="M0 3060 l0 -3060 3590 0 3590 0 0 3060 0 3060 -3590 0 -3590 0 0
+ -3060z m3801 2850 c266 -17 498 -67 747 -161 495 -188 934 -558 1214 -1024 85
+ -141 116 -206 177 -357 123 -308 187 -617 198 -953 11 -347 -30 -631 -143
+diff --git a/lhzx-admin/src/assets/main.css b/lhzx-admin/src/assets/main.css
+index 72d1744..8e8bb5c 100644
+--- a/lhzx-admin/src/assets/main.css
++++ b/lhzx-admin/src/assets/main.css
+@@ -4,8 +4,26 @@
+ 
+ @layer base {
+   :root {
++    /* ===== Layout ===== */
+     --sidebar-width: 240px;
++    --sidebar-collapsed-width: 64px;
+     --header-height: 56px;
++
++    /* ===== Design Tokens（与 tailwind.config.js / TDesign 同源）===== */
++    --td-brand-color: #0052D9;
++    --td-brand-color-hover: #366EF4;
++    --td-brand-color-active: #003CAB;
++    --td-brand-color-light: #E6F0FF;
++    --td-success-color: #2BA471;
++    --td-warning-color: #E37318;
++    --td-error-color: #D54941;
++    --color-vip-gold: #D48806;
++
++    --color-text-primary: rgba(0, 0, 0, 0.9);
++    --color-text-secondary: rgba(0, 0, 0, 0.6);
++    --color-text-placeholder: rgba(0, 0, 0, 0.4);
++    --color-border: #DCDEE0;
++    --color-bg-page: #f3f3f3;
+   }
+ 
+   * {
+@@ -18,8 +36,8 @@
+     height: 100%;
+     font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+     font-size: 14px;
+-    color: rgba(0, 0, 0, 0.9);
+-    background-color: #f3f3f3;
++    color: var(--color-text-primary);
++    background-color: var(--color-bg-page);
+     -webkit-font-smoothing: antialiased;
+     -moz-osx-font-smoothing: grayscale;
+   }
+@@ -53,6 +71,27 @@
+   .table-toolbar {
+     @apply flex items-center justify-between mb-4;
+   }
++
++  .pagination-wrap {
++    @apply mt-4 flex justify-end;
++  }
++
++  .action-group {
++    @apply flex items-center gap-2;
++  }
++}
++
++@layer utilities {
++  /* 筛选控件常用固定宽度（收敛各页面重复的 scoped 定义） */
++  .w-120 { width: 120px; }
++  .w-140 { width: 140px; }
++  .w-160 { width: 160px; }
++  .w-180 { width: 180px; }
++  .w-200 { width: 200px; }
++  .w-220 { width: 220px; }
++  .w-240 { width: 240px; }
++  .w-260 { width: 260px; }
++  .w-280 { width: 280px; }
+ }
+ 
+ /* TDesign override for consistent spacing */
+diff --git a/lhzx-admin/src/components/FileUpload.vue b/lhzx-admin/src/components/FileUpload.vue
+index 3f61668..59221e6 100644
+--- a/lhzx-admin/src/components/FileUpload.vue
++++ b/lhzx-admin/src/components/FileUpload.vue
+@@ -109,7 +109,7 @@ function handleRemove() {
+   background: #fafafa;
+ }
+ .file-upload__trigger:hover {
+-  border-color: #0052d9;
++  border-color: var(--td-brand-color);
+ }
+ .trigger-text {
+   font-size: 13px;
+diff --git a/lhzx-admin/src/components/ImageUpload.vue b/lhzx-admin/src/components/ImageUpload.vue
+index a0f7ecc..950bd2c 100644
+--- a/lhzx-admin/src/components/ImageUpload.vue
++++ b/lhzx-admin/src/components/ImageUpload.vue
+@@ -167,7 +167,7 @@ onUnmounted(() => {
+ }
+ 
+ .image-upload__trigger:hover {
+-  border-color: #0052d9;
++  border-color: var(--td-brand-color);
+   background: rgba(0, 82, 217, 0.04);
+ }
+ 
+diff --git a/lhzx-admin/src/components/RichEditor.vue b/lhzx-admin/src/components/RichEditor.vue
+index 41c292f..3eb4767 100644
+--- a/lhzx-admin/src/components/RichEditor.vue
++++ b/lhzx-admin/src/components/RichEditor.vue
+@@ -1,8 +1,8 @@
+ <template>
+   <div class="rich-editor">
+-    <div style="border: 1px solid #ccc">
++    <div class="rich-editor__frame">
+       <Toolbar
+-        style="border-bottom: 1px solid #ccc"
++        class="rich-editor__toolbar"
+         :editor="editorRef"
+         :defaultConfig="toolbarConfig"
+         mode="default"
+@@ -107,12 +107,22 @@ onBeforeUnmount(() => {
+   width: 100%;
+ }
+ 
++.rich-editor__frame {
++  border: 1px solid var(--color-border);
++  border-radius: 6px;
++  overflow: hidden;
++}
++
++.rich-editor__toolbar {
++  border-bottom: 1px solid var(--color-border);
++}
++
+ .rich-editor__uploading {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 8px 0;
+-  color: rgba(0, 0, 0, 0.6);
++  color: var(--color-text-secondary);
+   font-size: 13px;
+ }
+ </style>
+diff --git a/lhzx-admin/src/constants/menus.js b/lhzx-admin/src/constants/menus.js
+new file mode 100644
+index 0000000..13e1b06
+--- /dev/null
++++ b/lhzx-admin/src/constants/menus.js
+@@ -0,0 +1,35 @@
++import { markRaw } from "vue";
++import {
++  DashboardIcon,
++  UserIcon,
++  WalletIcon,
++  UserVipIcon,
++  BookIcon,
++  VideoIcon,
++  FolderIcon,
++  AssignmentIcon,
++  HistoryIcon,
++  ServiceIcon,
++  NotificationIcon,
++  SettingIcon,
++} from "tdesign-icons-vue-next";
++import { ROLES } from "./roles";
++
++const ALL_ADMIN = [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER];
++const WITH_CONSULTANT = [...ALL_ADMIN, ROLES.CONSULTANT];
++
++/** 侧边栏菜单配置（图标统一使用 tdesign-icons-vue-next） */
++export const MENUS = [
++  { path: "/dashboard", label: "数据看板", icon: markRaw(DashboardIcon), roles: ALL_ADMIN },
++  { path: "/users", label: "用户管理", icon: markRaw(UserIcon), roles: WITH_CONSULTANT },
++  { path: "/points", label: "积分管理", icon: markRaw(WalletIcon), roles: ALL_ADMIN },
++  { path: "/roles", label: "会员管理", icon: markRaw(UserVipIcon), roles: ALL_ADMIN },
++  { path: "/courses", label: "课程管理", icon: markRaw(BookIcon), roles: ALL_ADMIN },
++  { path: "/feed-videos", label: "首页短视频", icon: markRaw(VideoIcon), roles: ALL_ADMIN },
++  { path: "/materials", label: "资料管理", icon: markRaw(FolderIcon), roles: ALL_ADMIN },
++  { path: "/orders", label: "报单管理", icon: markRaw(AssignmentIcon), roles: WITH_CONSULTANT },
++  { path: "/logs", label: "操作日志", icon: markRaw(HistoryIcon), roles: WITH_CONSULTANT },
++  { path: "/services", label: "服务管理", icon: markRaw(ServiceIcon), roles: ALL_ADMIN },
++  { path: "/messages", label: "消息管理", icon: markRaw(NotificationIcon), roles: ALL_ADMIN },
++  { path: "/settings", label: "系统设置", icon: markRaw(SettingIcon), roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
++];
+diff --git a/lhzx-admin/src/layouts/AdminLayout.vue b/lhzx-admin/src/layouts/AdminLayout.vue
+index 4aa803b..406974c 100644
+--- a/lhzx-admin/src/layouts/AdminLayout.vue
++++ b/lhzx-admin/src/layouts/AdminLayout.vue
+@@ -1,26 +1,45 @@
+ <template>
+   <div class="admin-layout">
+-    <aside class="sidebar card-base">
+-      <div class="sidebar__brand">鹿功汇 · 管理后台</div>
++    <aside class="sidebar card-base" :class="{ 'sidebar--collapsed': collapsed }">
++      <div class="sidebar__brand">
++        <img src="@/assets/logo-mark.svg" alt="" class="brand-mark" />
++        <span v-if="!collapsed" class="brand-text">鹿功汇 · 管理后台</span>
++      </div>
+       <nav class="sidebar__menu">
+         <RouterLink
+           v-for="item in visibleMenus"
+           :key="item.path"
+           :to="item.path"
+           class="menu-link"
+-          :class="{ 'menu-link--active': route.path === item.path }"
++          :class="{ 'menu-link--active': route.path.startsWith(item.path) }"
++          :title="collapsed ? item.label : undefined"
+         >
+-          {{ item.label }}
++          <component :is="item.icon" class="menu-icon" size="18px" />
++          <span v-if="!collapsed" class="menu-label">{{ item.label }}</span>
+         </RouterLink>
+       </nav>
++      <button
++        type="button"
++        class="sidebar__collapse-btn"
++        :aria-label="collapsed ? '展开侧边栏' : '收起侧边栏'"
++        @click="collapsed = !collapsed"
++      >
++        <ChevronLeftIcon v-if="!collapsed" size="16px" />
++        <ChevronRightIcon v-else size="16px" />
++        <span v-if="!collapsed">收起</span>
++      </button>
+     </aside>
+ 
+     <div class="main-area">
+       <header class="topbar card-base">
+         <div class="topbar__title">{{ route.meta.title || "后台管理" }}</div>
+         <div class="topbar__actions">
+-          <span class="topbar__user">当前用户：{{ authStore.userName }}</span>
++          <span class="topbar__user">
++            <UserCircleIcon size="18px" class="topbar__user-icon" />
++            {{ authStore.userName }}
++          </span>
+           <t-button theme="default" variant="outline" size="small" @click="handleLogout">
++            <template #icon><LogoutIcon /></template>
+             退出
+           </t-button>
+         </div>
+@@ -34,55 +53,40 @@
+ </template>
+ 
+ <script setup>
+-import { computed } from "vue";
++import { computed, ref, watch } from "vue";
+ import { useRoute, useRouter } from "vue-router";
++import {
++  ChevronLeftIcon,
++  ChevronRightIcon,
++  UserCircleIcon,
++  LogoutIcon,
++} from "tdesign-icons-vue-next";
+ import { useAuthStore } from "../stores/auth";
+-import { ROLES } from "../constants/roles";
++import { MENUS } from "../constants/menus";
+ 
+ const route = useRoute();
+ const router = useRouter();
+ const authStore = useAuthStore();
+ 
+-const menus = [
+-  { path: "/dashboard", label: "数据看板", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER] },
+-  {
+-    path: "/users",
+-    label: "用户管理",
+-    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.CONSULTANT],
+-  },
+-  { path: "/points", label: "积分管理", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER] },
+-  { path: "/roles", label: "会员管理", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER] },
+-  { path: "/courses", label: "课程管理", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER] },
+-  { path: "/feed-videos", label: "首页短视频", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER] },
+-  { path: "/materials", label: "资料管理", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER] },
+-  {
+-    path: "/orders",
+-    label: "报单管理",
+-    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.CONSULTANT],
+-  },
+-  {
+-    path: "/logs",
+-    label: "操作日志",
+-    roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER, ROLES.CONSULTANT],
+-  },
+-  { path: "/services", label: "服务管理", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER] },
+-  { path: "/messages", label: "消息管理", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.MANAGER] },
+-  { path: "/settings", label: "系统设置", roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+-];
+-
+-const visibleMenus = computed(() => menus.filter((menu) => menu.roles.includes(authStore.userRole)));
++const collapsed = ref(localStorage.getItem("lhzx-sidebar-collapsed") === "1");
++
++const visibleMenus = computed(() => MENUS.filter((menu) => menu.roles.includes(authStore.userRole)));
+ 
+ function handleLogout() {
+   authStore.clear();
+   router.push("/login");
+ }
++
++watch(collapsed, (val) => {
++  localStorage.setItem("lhzx-sidebar-collapsed", val ? "1" : "0");
++});
+ </script>
+ 
+ <style scoped>
+ .admin-layout {
+   min-height: 100vh;
+   display: flex;
+-  background: #f3f3f3;
++  background: var(--color-bg-page);
+ }
+ 
+ .sidebar {
+@@ -90,40 +94,100 @@ function handleLogout() {
+   margin: 12px;
+   padding: 16px 12px;
+   border-radius: 12px;
++  display: flex;
++  flex-direction: column;
++  transition: width 0.2s ease;
++}
++
++.sidebar--collapsed {
++  width: var(--sidebar-collapsed-width);
++  padding: 16px 8px;
+ }
+ 
+ .sidebar__brand {
++  display: flex;
++  align-items: center;
++  gap: 8px;
+   font-size: 16px;
+   font-weight: 700;
+-  color: #0052d9;
++  color: var(--td-brand-color);
+   margin-bottom: 16px;
+   padding: 0 8px;
++  white-space: nowrap;
++  overflow: hidden;
++}
++
++.sidebar--collapsed .sidebar__brand {
++  justify-content: center;
++  padding: 0;
++}
++
++.brand-mark {
++  width: 24px;
++  height: 24px;
++  flex-shrink: 0;
+ }
+ 
+ .sidebar__menu {
+   display: flex;
+   flex-direction: column;
+   gap: 6px;
++  flex: 1;
+ }
+ 
+ .menu-link {
++  display: flex;
++  align-items: center;
++  gap: 10px;
+   padding: 10px 12px;
+   border-radius: 8px;
+-  color: rgba(0, 0, 0, 0.75);
++  color: var(--color-text-secondary);
+   text-decoration: none;
+   transition: all 0.2s ease;
++  white-space: nowrap;
++}
++
++.sidebar--collapsed .menu-link {
++  justify-content: center;
++  padding: 10px 0;
++}
++
++.menu-icon {
++  flex-shrink: 0;
+ }
+ 
+ .menu-link:hover {
+   background: rgba(0, 82, 217, 0.08);
++  color: var(--td-brand-color);
+ }
+ 
+ .menu-link--active {
+-  background: rgba(0, 82, 217, 0.14);
+-  color: #0052d9;
++  background: var(--td-brand-color-light);
++  color: var(--td-brand-color);
+   font-weight: 600;
+ }
+ 
++.sidebar__collapse-btn {
++  display: flex;
++  align-items: center;
++  justify-content: center;
++  gap: 6px;
++  margin-top: 12px;
++  padding: 8px;
++  border: none;
++  border-radius: 8px;
++  background: transparent;
++  color: var(--color-text-placeholder);
++  font-size: 12px;
++  cursor: pointer;
++  transition: all 0.2s ease;
++}
++
++.sidebar__collapse-btn:hover {
++  background: rgba(0, 0, 0, 0.04);
++  color: var(--color-text-secondary);
++}
++
+ .main-area {
+   flex: 1;
+   display: flex;
+@@ -153,6 +217,13 @@ function handleLogout() {
+ }
+ 
+ .topbar__user {
+-  color: rgba(0, 0, 0, 0.6);
++  display: flex;
++  align-items: center;
++  gap: 6px;
++  color: var(--color-text-secondary);
++}
++
++.topbar__user-icon {
++  color: var(--color-text-placeholder);
+ }
+ </style>
+diff --git a/lhzx-admin/src/views/CoursesView.vue b/lhzx-admin/src/views/CoursesView.vue
+index bed7514..6440476 100644
+--- a/lhzx-admin/src/views/CoursesView.vue
++++ b/lhzx-admin/src/views/CoursesView.vue
+@@ -52,7 +52,7 @@
+       </template>
+ 
+       <template #price="{ row }">
+-        <span v-if="row.price > 0" style="color: #E34D59; font-weight: 600;">¥{{ row.price }}</span>
++        <span v-if="row.price > 0" style="color: var(--td-error-color); font-weight: 600;">¥{{ row.price }}</span>
+         <t-tag v-else theme="success" variant="light">免费</t-tag>
+       </template>
+ 
+@@ -531,21 +531,7 @@ async function saveChapters() {
+ </script>
+ 
+ <style scoped>
+-.w-140 {
+-  width: 140px;
+-}
+-
+-.w-160 {
+-  width: 160px;
+-}
+-
+-.w-180 {
+-  width: 180px;
+-}
+-
+-.w-280 {
+-  width: 280px;
+-}
++/* .w-* 已收敛至全局 main.css */
+ 
+ .toolbar-actions {
+   display: flex;
+@@ -581,11 +567,6 @@ async function saveChapters() {
+   flex-wrap: nowrap;
+ }
+ 
+-.pagination-wrap {
+-  margin-top: 16px;
+-  display: flex;
+-  justify-content: flex-end;
+-}
+ 
+ .course-preview {
+   padding: 4px 0;
+@@ -661,7 +642,7 @@ async function saveChapters() {
+   width: 28px;
+   height: 28px;
+   border-radius: 50%;
+-  background: #0052D9;
++  background: var(--td-brand-color);
+   color: #FFFFFF;
+   display: flex;
+   align-items: center;
+diff --git a/lhzx-admin/src/views/DashboardView.vue b/lhzx-admin/src/views/DashboardView.vue
+index 780cd68..5d3c8cf 100644
+--- a/lhzx-admin/src/views/DashboardView.vue
++++ b/lhzx-admin/src/views/DashboardView.vue
+@@ -131,7 +131,7 @@ onMounted(() => {
+   font-size: 30px;
+   line-height: 1;
+   font-weight: 700;
+-  color: #111827;
++  color: var(--color-text-primary);
+ }
+ 
+ .todo-grid {
+@@ -161,7 +161,7 @@ onMounted(() => {
+   margin-top: 8px;
+   font-size: 26px;
+   font-weight: 700;
+-  color: #0052d9;
++  color: var(--td-brand-color);
+ }
+ 
+ @media (max-width: 1100px) {
+diff --git a/lhzx-admin/src/views/LoginView.vue b/lhzx-admin/src/views/LoginView.vue
+index c524139..7eb774a 100644
+--- a/lhzx-admin/src/views/LoginView.vue
++++ b/lhzx-admin/src/views/LoginView.vue
+@@ -20,9 +20,18 @@
+         <t-input
+           v-model="form.password"
+           clearable
+-          type="password"
++          :type="passwordVisible ? 'text' : 'password'"
+           placeholder="请输入密码"
+-        />
++          @enter="handleLogin"
++        >
++          <template #suffix-icon>
++            <component
++              :is="passwordVisible ? BrowseIcon : BrowseOffIcon"
++              class="password-toggle"
++              @click="passwordVisible = !passwordVisible"
++            />
++          </template>
++        </t-input>
+       </div>
+ 
+       <div class="form-item">
+@@ -39,6 +48,7 @@
+ <script setup>
+ import { reactive, ref } from "vue";
+ import { MessagePlugin } from "tdesign-vue-next";
++import { BrowseIcon, BrowseOffIcon } from "tdesign-icons-vue-next";
+ import { useRoute, useRouter } from "vue-router";
+ import { adminLogin } from "../api/auth";
+ import { useAuthStore } from "../stores/auth";
+@@ -47,6 +57,7 @@ const route = useRoute();
+ const router = useRouter();
+ const authStore = useAuthStore();
+ const submitting = ref(false);
++const passwordVisible = ref(false);
+ 
+ const form = reactive({
+   phone: "",
+@@ -96,7 +107,7 @@ async function handleLogin() {
+   min-height: 100vh;
+   display: grid;
+   place-items: center;
+-  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
++  background: linear-gradient(180deg, #f8fbff 0%, var(--td-brand-color-light) 100%);
+ }
+ 
+ .login-card {
+@@ -116,12 +127,12 @@ async function handleLogin() {
+   margin-bottom: 8px;
+   font-size: 22px;
+   font-weight: 700;
+-  color: #1f2937;
++  color: var(--color-text-primary);
+ }
+ 
+ .login-desc {
+   margin-bottom: 20px;
+-  color: rgba(0, 0, 0, 0.6);
++  color: var(--color-text-secondary);
+ }
+ 
+ .form-item {
+@@ -131,10 +142,19 @@ async function handleLogin() {
+ .form-label {
+   display: block;
+   margin-bottom: 6px;
+-  color: rgba(0, 0, 0, 0.7);
++  color: var(--color-text-secondary);
+   font-size: 13px;
+ }
+ 
++.password-toggle {
++  cursor: pointer;
++  color: var(--color-text-placeholder);
++}
++
++.password-toggle:hover {
++  color: var(--td-brand-color);
++}
++
+ .login-actions {
+   display: flex;
+   flex-direction: column;
+diff --git a/lhzx-admin/src/views/LogsView.vue b/lhzx-admin/src/views/LogsView.vue
+index 08589fc..e2446f0 100644
+--- a/lhzx-admin/src/views/LogsView.vue
++++ b/lhzx-admin/src/views/LogsView.vue
+@@ -227,21 +227,6 @@ onMounted(() => {
+ </script>
+ 
+ <style scoped>
+-.w-160 {
+-  width: 160px;
+-}
+-
+-.w-200 {
+-  width: 200px;
+-}
++/* .w-* 已收敛至全局 main.css */
+ 
+-.w-280 {
+-  width: 280px;
+-}
+-
+-.pagination-wrap {
+-  margin-top: 16px;
+-  display: flex;
+-  justify-content: flex-end;
+-}
+ </style>
+diff --git a/lhzx-admin/src/views/MaterialsView.vue b/lhzx-admin/src/views/MaterialsView.vue
+index 6f506d1..dde38e7 100644
+--- a/lhzx-admin/src/views/MaterialsView.vue
++++ b/lhzx-admin/src/views/MaterialsView.vue
+@@ -68,7 +68,7 @@
+           </div>
+ 
+           <div v-if="categoryDistribution.invalidCategories.length > 0" class="fix-section">
+-            <h4 class="fix-section-title" style="color: #D54941;">无效分类（需修复）</h4>
++            <h4 class="fix-section-title" style="color: var(--td-error-color);">无效分类（需修复）</h4>
+             <t-table :data="invalidCategoryRows" size="small" :bordered="true" row-key="oldCategory">
+               <template #oldCategory="{ row }">
+                 <code>{{ row.oldCategory }}</code>
+@@ -98,7 +98,7 @@
+           </div>
+ 
+           <div v-else class="fix-empty">
+-            <t-icon name="check-circle" size="24px" color="#2BA471" />
++            <t-icon name="check-circle" size="24px" color="var(--td-success-color)" />
+             <span>所有素材分类均有效，无需修复</span>
+           </div>
+         </div>
+@@ -280,9 +280,6 @@ onMounted(fetchList);
+ </script>
+ 
+ <style scoped>
+-.w-140 { width: 140px; }
+-.w-160 { width: 160px; }
+-.w-180 { width: 180px; }
+ .table-toolbar {
+   display: flex;
+   justify-content: space-between;
+@@ -293,11 +290,6 @@ onMounted(fetchList);
+   display: flex;
+   gap: 8px;
+ }
+-.pagination-wrap {
+-  margin-top: 16px;
+-  display: flex;
+-  justify-content: flex-end;
+-}
+ 
+ /* 分类修复弹窗样式 */
+ .category-fix-content {
+@@ -341,7 +333,7 @@ onMounted(fetchList);
+   align-items: center;
+   gap: 8px;
+   padding: 16px 0;
+-  color: #2BA471;
++  color: var(--td-success-color);
+   font-size: 14px;
+ }
+ </style>
+diff --git a/lhzx-admin/src/views/MessagesView.vue b/lhzx-admin/src/views/MessagesView.vue
+index 32f3913..613c707 100644
+--- a/lhzx-admin/src/views/MessagesView.vue
++++ b/lhzx-admin/src/views/MessagesView.vue
+@@ -206,10 +206,5 @@ onMounted(() => { fetchList(); });
+ </script>
+ 
+ <style scoped>
+-.w-120 { width: 120px; }
+-.w-140 { width: 140px; }
+-.w-180 { width: 180px; }
+-.w-280 { width: 280px; }
+-.pagination-wrap { margin-top: 16px; display: flex; justify-content: flex-end; }
+ .form-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; }
+ </style>
+diff --git a/lhzx-admin/src/views/OrderDetailView.vue b/lhzx-admin/src/views/OrderDetailView.vue
+index 4f1c499..f996370 100644
+--- a/lhzx-admin/src/views/OrderDetailView.vue
++++ b/lhzx-admin/src/views/OrderDetailView.vue
+@@ -341,7 +341,7 @@ onMounted(() => {
+ }
+ 
+ .minus-points {
+-  color: #dc2626;
++  color: var(--td-error-color);
+ }
+ 
+ @media (max-width: 960px) {
+diff --git a/lhzx-admin/src/views/OrdersView.vue b/lhzx-admin/src/views/OrdersView.vue
+index 64f1adb..1dd5e87 100644
+--- a/lhzx-admin/src/views/OrdersView.vue
++++ b/lhzx-admin/src/views/OrdersView.vue
+@@ -211,29 +211,10 @@ onMounted(() => {
+ </script>
+ 
+ <style scoped>
+-.w-140 {
+-  width: 140px;
+-}
+-.w-160 {
+-  width: 160px;
+-}
+-.w-180 {
+-  width: 180px;
+-}
+-.w-260 {
+-  width: 260px;
+-}
+-.w-280 {
+-  width: 280px;
+-}
++/* .w-* 已收敛至全局 main.css */
+ .action-group {
+   display: flex;
+   align-items: center;
+   gap: 4px;
+ }
+-.pagination-wrap {
+-  margin-top: 16px;
+-  display: flex;
+-  justify-content: flex-end;
+-}
+ </style>
+diff --git a/lhzx-admin/src/views/PointsView.vue b/lhzx-admin/src/views/PointsView.vue
+index 623454f..5ba29f5 100644
+--- a/lhzx-admin/src/views/PointsView.vue
++++ b/lhzx-admin/src/views/PointsView.vue
+@@ -460,38 +460,15 @@ onMounted(async () => {
+   gap: 6px;
+ }
+ 
+-.w-160 {
+-  width: 160px;
+-}
+-.w-180 {
+-  width: 180px;
+-}
+-.w-200 {
+-  width: 200px;
+-}
+-.w-220 {
+-  width: 220px;
+-}
+-.w-260 {
+-  width: 260px;
+-}
+-.w-280 {
+-  width: 280px;
+-}
+-
+-.pagination-wrap {
+-  margin-top: 16px;
+-  display: flex;
+-  justify-content: flex-end;
+-}
++/* .w-* 与 .pagination-wrap 已收敛至全局 main.css */
+ 
+ .plus {
+-  color: #059669;
++  color: var(--td-success-color);
+ }
+ 
+ .minus,
+ .minus-points {
+-  color: #dc2626;
++  color: var(--td-error-color);
+ }
+ 
+ .text-muted {
+diff --git a/lhzx-admin/src/views/RoleManageView.vue b/lhzx-admin/src/views/RoleManageView.vue
+index 3b94d19..1a0b572 100644
+--- a/lhzx-admin/src/views/RoleManageView.vue
++++ b/lhzx-admin/src/views/RoleManageView.vue
+@@ -7,7 +7,7 @@
+ 
+     <!-- ========== 激活码生成 ========== -->
+     <div class="code-gen-section card-base">
+-      <h3 class="section-title">生成激活码</h3>
++      <h3 class="subsection-title">生成激活码</h3>
+       <div class="code-gen-form">
+         <div class="form-row">
+           <span class="form-label">生成数量</span>
+@@ -34,7 +34,7 @@
+     <!-- ========== 激活码列表 ========== -->
+     <div class="code-list-section card-base">
+       <div class="section-header">
+-        <h3 class="section-title">激活码列表</h3>
++        <h3 class="subsection-title">激活码列表</h3>
+         <t-select v-model="codeStatusFilter" style="width: 140px" @change="loadCodes">
+           <t-option value="all" label="全部状态" />
+           <t-option value="unused" label="未使用" />
+@@ -348,7 +348,7 @@ onMounted(() => {
+   margin-bottom: 12px;
+ }
+ 
+-.section-title {
++.subsection-title {
+   font-size: 15px;
+   font-weight: 600;
+   margin: 0 0 8px;
+@@ -397,7 +397,7 @@ onMounted(() => {
+ .avatar-placeholder {
+   font-size: 22px;
+   font-weight: 600;
+-  color: #0052d9;
++  color: var(--td-brand-color);
+ }
+ 
+ .user-name {
+diff --git a/lhzx-admin/src/views/ServicesView.vue b/lhzx-admin/src/views/ServicesView.vue
+index ee45809..d46fdde 100644
+--- a/lhzx-admin/src/views/ServicesView.vue
++++ b/lhzx-admin/src/views/ServicesView.vue
+@@ -29,7 +29,7 @@
+         <span :title="row.desc">{{ row.desc ? (row.desc.length > 20 ? row.desc.slice(0, 20) + '...' : row.desc) : '-' }}</span>
+       </template>
+       <template #price="{ row }">
+-        <span v-if="row.price > 0" style="color: #E34D59; font-weight: 600;">¥{{ row.price }}</span>
++        <span v-if="row.price > 0" style="color: var(--td-error-color); font-weight: 600;">¥{{ row.price }}</span>
+         <t-tag v-else theme="success" variant="light">免费</t-tag>
+       </template>
+       <template #points="{ row }">
+@@ -155,9 +155,6 @@ onMounted(() => { fetchList(); });
+ </script>
+ 
+ <style scoped>
+-.w-140 { width: 140px; }
+-.w-180 { width: 180px; }
+ .toolbar-actions { display: flex; align-items: center; gap: 12px; }
+ .action-group { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; }
+-.pagination-wrap { margin-top: 16px; display: flex; justify-content: flex-end; }
+ </style>
+diff --git a/lhzx-admin/src/views/SettingsView.vue b/lhzx-admin/src/views/SettingsView.vue
+index 3e72409..78f14a9 100644
+--- a/lhzx-admin/src/views/SettingsView.vue
++++ b/lhzx-admin/src/views/SettingsView.vue
+@@ -320,11 +320,9 @@ onMounted(() => { fetchRules(); fetchCatalog(); fetchAdmins(); });
+ </script>
+ 
+ <style scoped>
+-.w-180 { width: 180px; }
+ .filter-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+ .table-toolbar { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 8px; }
+ .action-group { display: flex; align-items: center; gap: 4px; }
+-.pagination-wrap { margin-top: 16px; display: flex; justify-content: flex-end; }
+-.form-tip { font-size: 12px; color: rgba(0,0,0,0.4); margin-top: 4px; }
++.form-tip { font-size: 12px; color: var(--color-text-placeholder); margin-top: 4px; }
+ .form-actions { display: flex; justify-content: flex-end; gap: 12px; padding-top: 16px; }
+ </style>
+diff --git a/lhzx-admin/src/views/UserDetailView.vue b/lhzx-admin/src/views/UserDetailView.vue
+index 2ed46a5..4d51618 100644
+--- a/lhzx-admin/src/views/UserDetailView.vue
++++ b/lhzx-admin/src/views/UserDetailView.vue
+@@ -482,7 +482,7 @@ onMounted(() => {
+ }
+ 
+ .role-option.is-current {
+-  border-color: #0052d9;
++  border-color: var(--td-brand-color);
+   background: rgba(0, 82, 217, 0.06);
+ }
+ 
+diff --git a/lhzx-admin/src/views/UsersView.vue b/lhzx-admin/src/views/UsersView.vue
+index 6a710b0..1bc4ac5 100644
+--- a/lhzx-admin/src/views/UsersView.vue
++++ b/lhzx-admin/src/views/UsersView.vue
+@@ -270,17 +270,7 @@ onMounted(() => {
+ </script>
+ 
+ <style scoped>
+-.w-160 {
+-  width: 160px;
+-}
+-
+-.w-180 {
+-  width: 180px;
+-}
+-
+-.w-280 {
+-  width: 280px;
+-}
++/* .w-* 已收敛至全局 main.css */
+ 
+ .toolbar-actions {
+   display: flex;
+@@ -304,9 +294,4 @@ onMounted(() => {
+   gap: 4px;
+ }
+ 
+-.pagination-wrap {
+-  margin-top: 16px;
+-  display: flex;
+-  justify-content: flex-end;
+-}
+ </style>
+diff --git a/lhzx-h5/src/assets/icons/logo-seal.svg b/lhzx-h5/src/assets/icons/logo-seal.svg
+index 9f877e6..8a189fa 100644
+--- a/lhzx-h5/src/assets/icons/logo-seal.svg
++++ b/lhzx-h5/src/assets/icons/logo-seal.svg
+@@ -1,7 +1,7 @@
+ <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+-  <!-- �Gp� Logo -->
++  <!-- ??? ?? Logo -->
+   <rect x="4" y="4" width="40" height="40" rx="4" stroke="currentColor" stroke-width="2.2"/>
+   <path d="M24 10L28 18H36L29.5 23L32 31L24 26L16 31L18.5 23L12 18H20L24 10Z" fill="currentColor" opacity="0.15"/>
+   <path d="M24 13L27 19H33L28 22.5L30 28.5L24 25L18 28.5L20 22.5L15 19H21L24 13Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+-  <text x="24" y="40" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor" font-family="serif">�G</text>
++  <text x="24" y="40" text-anchor="middle" font-size="7" font-weight="700" fill="currentColor" font-family="serif">?</text>
+ </svg>
+-- 
+2.43.0
+
