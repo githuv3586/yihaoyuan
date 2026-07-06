@@ -119,8 +119,24 @@ python manage.py test
 ## 生产部署提示
 
 - 设置环境变量 `DJANGO_SECRET_KEY`、`DJANGO_DEBUG=0`、`DJANGO_ALLOWED_HOSTS`
-- 短信验证码目前在生产模式下生成随机码但未接入短信服务商,需在 `apps/h5/views.py::send_code` 中接入真实短信 API
+- 部署在 HTTPS 反向代理之后时,设置 `DJANGO_BEHIND_PROXY_SSL=1` 与 `DJANGO_CSRF_TRUSTED_ORIGINS=https://你的域名`
+- 短信验证码:`DEV_SMS_MODE=1`(演示模式)使用固定验证码 `123456` 并在接口中返回;接入真实短信服务商后设置 `DEV_SMS_MODE=0` 并在 `apps/h5/views.py::send_code` 中调用短信 API
 - 使用 `python manage.py collectstatic` 收集静态文件,并配置 WSGI 服务器(如 gunicorn)与反向代理
+
+### 部署到 PythonAnywhere
+
+线上演示:<https://hongzhuapai.pythonanywhere.com/>(管理后台 `/admin/`)
+
+仓库提供了一键部署脚本(基于 [PythonAnywhere API](https://help.pythonanywhere.com/pages/API),兼容免费账号,无需登录服务器):
+
+```bash
+export PA_USER=<用户名>
+export PA_TOKEN=<API Token>
+export DJANGO_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(48))")
+bash deploy/deploy_pythonanywhere.sh
+```
+
+脚本流程:本地执行 migrate / seed_demo / collectstatic → 通过 files API 上传代码、SQLite 数据库与静态产物 → 创建 Web 应用(python3.13,使用镜像预装的 Django 5.1)→ 写入 WSGI 配置 → 配置 `/static/` 映射与强制 HTTPS → 重载应用。
 
 ## License
 
