@@ -36,7 +36,11 @@ def send_code(request):
         return JsonResponse({"ok": False, "msg": "请输入正确的手机号"}, status=400)
 
     phone = form.cleaned_data["phone"]
-    code = settings.DEV_SMS_CODE if settings.DEBUG else f"{random.randint(100000, 999999)}"
+    code = (
+        settings.DEV_SMS_CODE
+        if settings.DEV_SMS_MODE
+        else f"{random.randint(100000, 999999)}"
+    )
     VerificationCode.objects.create(
         phone=phone,
         code=code,
@@ -44,7 +48,7 @@ def send_code(request):
     )
     # 生产环境应在此处调用短信服务商 API 下发验证码
     payload = {"ok": True, "msg": "验证码已发送"}
-    if settings.DEBUG:
+    if settings.DEV_SMS_MODE:
         payload["dev_code"] = code
     return JsonResponse(payload)
 

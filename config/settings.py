@@ -18,6 +18,16 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
 
+CSRF_TRUSTED_ORIGINS = [
+    origin
+    for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin
+]
+
+# 部署在 HTTPS 反向代理(如 PythonAnywhere)之后时置为 1
+if os.environ.get("DJANGO_BEHIND_PROXY_SSL", "0") == "1":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -106,3 +116,6 @@ VIP_EXCHANGE_POINTS = 1000
 VIP_EXCHANGE_DAYS = 30
 # 开发环境固定短信验证码(生产环境应接入真实短信服务)
 DEV_SMS_CODE = "123456"
+# 演示模式:未接入短信服务商时,使用固定验证码并在接口中返回,便于演示体验。
+# 生产环境接入真实短信服务后应设置 DEV_SMS_MODE=0。
+DEV_SMS_MODE = os.environ.get("DEV_SMS_MODE", "1" if DEBUG else "0") == "1"
