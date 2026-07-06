@@ -1,0 +1,48 @@
+{% extends "panel/base.html" %}
+{% block title %}报单详情{% endblock %}
+{% block page_header %}报单详情 - {{ order.order_id }}{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:12px">报单信息</div>
+    <table>
+      <tr><th>订单号</th><td>{{ order.order_id }}</td></tr>
+      <tr><th>类型</th><td><span class="tag tag-blue">{{ order.get_type_display }}</span></td></tr>
+      <tr><th>状态</th><td><span class="tag {% if order.status == 'pending' %}tag-red{% elif order.status == 'approved' %}tag-green{% endif %}">{{ order.get_status_display }}</span></td></tr>
+      <tr><th>提交用户</th><td><a href="{% url 'panel:user_detail' order.user.pk %}" style="color:var(--primary)">{{ order.user.display_name }}</a></td></tr>
+      <tr><th>联系人</th><td>{{ order.contact_name }}</td></tr>
+      <tr><th>联系电话</th><td>{{ order.phone }}</td></tr>
+      <tr><th>金额</th><td>{{ order.amount|default:"-" }}</td></tr>
+      <tr><th>提交时间</th><td>{{ order.created_at|date:"Y-m-d H:i" }}</td></tr>
+    </table>
+    <div style="margin-top:12px">
+      <div class="muted" style="margin-bottom:4px">需求描述</div>
+      <div style="line-height:1.7">{{ order.description|linebreaks }}</div>
+    </div>
+  </div>
+  <div class="card">
+    {% if order.status == 'pending' %}
+    <div style="font-weight:600;margin-bottom:12px">审核操作</div>
+    <form method="post" action="{% url 'panel:order_review' order.pk %}">
+      {% csrf_token %}
+      <label>审核结果</label>
+      <select name="decision">
+        <option value="approved">通过</option>
+        <option value="rejected">拒绝</option>
+      </select>
+      <label>审核备注(拒绝时必填)</label>
+      <textarea name="note" rows="3" placeholder="填写审核意见"></textarea>
+      <button class="btn">提交审核</button>
+    </form>
+    {% else %}
+    <div style="font-weight:600;margin-bottom:12px">审核信息</div>
+    <table>
+      <tr><th>审核人</th><td>{{ order.reviewer.display_name|default:"-" }}</td></tr>
+      <tr><th>审核备注</th><td>{{ order.review_note|default:"-" }}</td></tr>
+      <tr><th>审核时间</th><td>{{ order.reviewed_at|date:"Y-m-d H:i"|default:"-" }}</td></tr>
+    </table>
+    {% endif %}
+  </div>
+</div>
+<a href="{% url 'panel:order_list' %}" class="btn btn-ghost">← 返回列表</a>
+{% endblock %}

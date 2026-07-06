@@ -1,0 +1,31 @@
+{% extends "panel/base.html" %}
+{% block title %}视频管理{% endblock %}
+{% block page_header %}视频管理(首页 feed){% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+    <form method="get" class="filter-bar" style="margin-bottom:0">
+      <select name="channel">
+        <option value="">全部频道</option>
+        {% for value, label in channels %}<option value="{{ value }}" {% if channel == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button class="btn">筛选</button>
+    </form>
+    <a href="{% url 'panel:video_create' %}" class="btn">+ 新建视频</a>
+  </div>
+  <table>
+    <tr><th>标题</th><th>频道</th><th>状态</th><th>点赞</th><th>播放</th><th>排序</th><th>操作</th></tr>
+    {% for video in page %}
+    <tr>
+      <td>{{ video.title }}</td>
+      <td><span class="tag tag-gold">{{ video.get_channel_display }}</span></td>
+      <td><span class="tag {% if video.status == 'published' %}tag-green{% endif %}">{{ video.get_status_display }}</span></td>
+      <td>{{ video.like_count }}</td>
+      <td>{{ video.view_count }}</td>
+      <td>{{ video.sort_order }}</td>
+      <td><a href="{% url 'panel:video_edit' video.pk %}" class="btn btn-sm btn-ghost">编辑</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="7" class="empty">暂无视频</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if item %}编辑兑换商品{% else %}新增兑换商品{% endif %}{% endblock %}
+{% block page_header %}{% if item %}编辑兑换商品{% else %}新增兑换商品{% endif %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:600px">
+  <form method="post">
+    {% csrf_token %}
+    <label>商品名称 *</label>{{ form.title }}
+    {% if form.title.errors %}<div class="errors">{{ form.title.errors.0 }}</div>{% endif %}
+    <label>商品描述</label>{{ form.desc }}
+    <div class="form-grid">
+      <div><label>所需积分 *</label>{{ form.points_cost }}</div>
+      <div><label>VIP 天数(VIP 商品时生效)</label>{{ form.vip_days }}</div>
+      <div><label>状态 *</label>{{ form.status }}</div>
+      <div><label>排序权重</label>{{ form.sort_order }}</div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="width:auto">{{ form.is_vip }}</span> 是否 VIP 商品(兑换后自动开通 VIP)
+    </label>
+    <button class="btn">保存</button>
+    <a href="{% url 'panel:catalog_list' %}" class="btn btn-ghost">取消</a>
+  </form>
+</div>
+{% endblock %}

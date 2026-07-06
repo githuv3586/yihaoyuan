@@ -1,0 +1,44 @@
+{% extends "panel/base.html" %}
+{% block title %}章节管理{% endblock %}
+{% block page_header %}章节管理 - {{ course.title }}{% endblock %}
+{% block content %}
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:12px">章节列表</div>
+    <table>
+      <tr><th>#</th><th>标题</th><th>时长</th><th>免费试看</th><th>视频</th><th>操作</th></tr>
+      {% for chapter in chapters %}
+      <tr>
+        <td>{{ chapter.sort_order }}</td>
+        <td>{{ chapter.title }}</td>
+        <td class="muted">{{ chapter.duration|default:"-" }}</td>
+        <td>{% if chapter.is_free %}<span class="tag tag-green">免费</span>{% else %}-{% endif %}</td>
+        <td>{% if chapter.video_url %}<span class="tag tag-blue">已上传</span>{% else %}<span class="tag">未上传</span>{% endif %}</td>
+        <td>
+          <form method="post" action="{% url 'panel:chapter_delete' chapter.pk %}" style="display:inline" onsubmit="return confirm('确认删除该章节?')">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-danger">删除</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="empty">暂无章节</td></tr>{% endfor %}
+    </table>
+  </div>
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:12px">添加章节</div>
+    <form method="post">
+      {% csrf_token %}
+      <label>章节标题 *</label>{{ form.title }}
+      {% if form.title.errors %}<div class="errors">{{ form.title.errors.0 }}</div>{% endif %}
+      <label>排序序号</label>{{ form.sort_order }}
+      <label>时长(如 12:30)</label>{{ form.duration }}
+      <label>视频地址</label>{{ form.video_url }}
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span style="width:auto">{{ form.is_free }}</span> 免费试看
+      </label>
+      <button class="btn">添加章节</button>
+    </form>
+  </div>
+</div>
+<a href="{% url 'panel:course_list' %}" class="btn btn-ghost">← 返回课程列表</a>
+{% endblock %}

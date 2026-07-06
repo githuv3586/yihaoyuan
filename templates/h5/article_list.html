@@ -1,0 +1,25 @@
+{% extends "h5/base.html" %}
+{% block title %}武学文章{% endblock %}
+{% block content %}
+<div class="section-title">武学资讯</div>
+{% for article in page %}
+<a href="{% url 'h5:article_detail' article.pk %}" class="card" style="display:block">
+  <div style="font-weight:600;font-size:15px;margin-bottom:6px">{{ article.title }}</div>
+  {% if article.summary %}<div class="muted" style="margin-bottom:6px">{{ article.summary }}</div>{% endif %}
+  <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
+    <span>{{ article.author|default:"鹿功汇" }}</span>
+    <span>{{ article.published_at|date:"Y-m-d" }} · {{ article.view_count }} 阅读</span>
+  </div>
+</a>
+{% empty %}
+<div class="empty">暂无文章</div>
+{% endfor %}
+
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">上一页</a>{% endif %}
+  <span class="muted">{{ page.number }} / {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}">下一页</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

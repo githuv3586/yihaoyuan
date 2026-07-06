@@ -1,0 +1,29 @@
+{% extends "panel/base.html" %}
+{% block title %}服务管理{% endblock %}
+{% block page_header %}服务管理{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+    <form method="get" class="filter-bar" style="margin-bottom:0">
+      <input type="search" name="q" placeholder="服务名" value="{{ keyword }}">
+      <button class="btn">搜索</button>
+    </form>
+    <a href="{% url 'panel:service_create' %}" class="btn">+ 新建服务</a>
+  </div>
+  <table>
+    <tr><th>服务编号</th><th>名称</th><th>描述</th><th>价格</th><th>积分价</th><th>特性</th><th>状态</th><th>操作</th></tr>
+    {% for service in page %}
+    <tr>
+      <td class="muted">{{ service.service_id }}</td>
+      <td>{{ service.name }}</td>
+      <td class="muted">{{ service.desc|truncatechars:24 }}</td>
+      <td>¥{{ service.price }}</td>
+      <td>{{ service.points_cost }}</td>
+      <td>{% for f in service.feature_list %}<span class="tag">{{ f }}</span>{% endfor %}</td>
+      <td><span class="tag {% if service.status == 'active' %}tag-green{% else %}tag-red{% endif %}">{{ service.get_status_display }}</span></td>
+      <td><a href="{% url 'panel:service_edit' service.pk %}" class="btn btn-sm btn-ghost">编辑</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="8" class="empty">暂无服务</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% load static %}<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>{% block title %}鹿功汇{% endblock %} - 传承武学 · 修习身心</title>
+<style>
+:root{
+  --primary:#8b2e1f;--primary-dark:#6e2418;--gold:#c9a45c;
+  --bg:#f6f3ee;--card:#fff;--text:#2b2420;--muted:#8a7f74;--line:#e8e1d6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:70px}
+a{color:inherit;text-decoration:none}
+.topbar{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+.topbar .brand{font-size:18px;font-weight:700;letter-spacing:2px}
+.topbar .slogan{font-size:11px;opacity:.85}
+.container{padding:12px}
+.card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(43,36,32,.06)}
+.btn{display:inline-block;border:none;cursor:pointer;border-radius:8px;padding:10px 18px;font-size:15px;background:var(--primary);color:#fff;text-align:center}
+.btn:active{background:var(--primary-dark)}
+.btn-block{display:block;width:100%}
+.btn-ghost{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+.btn-sm{padding:6px 12px;font-size:13px;border-radius:6px}
+.tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;background:#f3e9d8;color:#8a6a2f;margin-right:4px}
+.tag-red{background:#fbe4e0;color:var(--primary)}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#fff;margin-bottom:10px}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+.errors{color:#c0392b;font-size:13px;margin-bottom:8px}
+.flash{padding:10px 14px;border-radius:8px;margin-bottom:10px;font-size:14px}
+.flash.success{background:#e6f4e6;color:#2e7d32}
+.flash.error{background:#fbe4e0;color:#c0392b}
+.flash.info{background:#e8f0f8;color:#1e5b94}
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:#fff;border-top:1px solid var(--line);display:flex;z-index:20}
+.tabbar a{flex:1;text-align:center;padding:9px 0 7px;font-size:11px;color:var(--muted)}
+.tabbar a.active{color:var(--primary);font-weight:600}
+.tabbar .ico{display:block;font-size:20px;line-height:1.2}
+.section-title{font-size:16px;font-weight:700;margin:14px 4px 10px;display:flex;align-items:center}
+.section-title::before{content:"";width:4px;height:16px;background:var(--gold);border-radius:2px;margin-right:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.muted{color:var(--muted);font-size:13px}
+.pill-nav{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px}
+.pill-nav a{white-space:nowrap;padding:6px 14px;border-radius:16px;font-size:13px;background:#fff;border:1px solid var(--line);color:var(--muted)}
+.pill-nav a.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.empty{text-align:center;color:var(--muted);padding:40px 0;font-size:14px}
+.pager{display:flex;justify-content:center;gap:12px;padding:12px;font-size:14px}
+.pager a{color:var(--primary)}
+.cover{width:100%;height:150px;object-fit:cover;border-radius:8px;background:linear-gradient(135deg,#d9c9a8,#b09468);display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;letter-spacing:4px}
+</style>
+{% block style %}{% endblock %}
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <div class="brand">鹿功汇</div>
+    <div class="slogan">传承武学 · 修习身心</div>
+  </div>
+  <div>
+    {% if user.is_authenticated %}
+      <a href="{% url 'h5:profile' %}" style="font-size:13px">{{ user.display_name }}</a>
+    {% else %}
+      <a href="{% url 'h5:login' %}" style="font-size:13px">登录</a>
+    {% endif %}
+  </div>
+</header>
+
+<main class="container">
+  {% for msg in messages %}
+    <div class="flash {{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+
+<nav class="tabbar">
+  <a href="{% url 'h5:home' %}" class="{% if active_tab == 'home' or request.resolver_match.url_name == 'home' %}active{% endif %}"><span class="ico">🏮</span>首页</a>
+  <a href="{% url 'h5:course_list' %}" class="{% if 'course' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">🥋</span>武学课堂</a>
+  <a href="{% url 'h5:article_list' %}" class="{% if 'article' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">📜</span>文章</a>
+  <a href="{% url 'h5:message_list' %}" class="{% if 'message' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">🔔</span>消息</a>
+  <a href="{% url 'h5:profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}"><span class="ico">👤</span>我的</a>
+</nav>
+{% block script %}{% endblock %}
+</body>
+</html>

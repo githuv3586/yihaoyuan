@@ -1,0 +1,57 @@
+{% extends "h5/base.html" %}
+{% block title %}{{ course.title }}{% endblock %}
+{% block content %}
+<div class="card" style="padding:0;overflow:hidden">
+  {% if course.cover %}
+    <img class="cover" src="{{ course.cover }}" alt="{{ course.title }}">
+  {% else %}
+    <div class="cover">武学</div>
+  {% endif %}
+  <div style="padding:14px">
+    <h2 style="font-size:18px;margin-bottom:8px">{{ course.title }}</h2>
+    <div style="margin-bottom:8px">
+      <span class="tag">{{ course.get_category_display }}</span>
+      {% for t in course.tag_list %}<span class="tag tag-red">{{ t }}</span>{% endfor %}
+    </div>
+    <p class="muted">{{ course.desc }}</p>
+    <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:13px" class="muted">
+      <span>讲师:{{ course.teacher|default:"鹿功汇" }}</span>
+      <span>{{ course.lesson_count }} 课时 · {{ course.enroll_count }} 人已报名</span>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">章节目录</div>
+<div class="card">
+  {% for chapter in chapters %}
+  <div style="display:flex;justify-content:space-between;padding:10px 0;{% if not forloop.last %}border-bottom:1px solid var(--line){% endif %}">
+    <span>{{ forloop.counter }}. {{ chapter.title }}</span>
+    <span class="muted">
+      {% if chapter.duration %}{{ chapter.duration }}{% endif %}
+      {% if chapter.is_free %}<span class="tag" style="margin-left:6px">免费试看</span>{% endif %}
+    </span>
+  </div>
+  {% empty %}
+  <div class="empty" style="padding:16px 0">章节整理中</div>
+  {% endfor %}
+</div>
+
+{% if course.content %}
+<div class="section-title">课程详情</div>
+<div class="card" style="line-height:1.8;font-size:14px">{{ course.content|linebreaks }}</div>
+{% endif %}
+
+<div style="position:fixed;bottom:70px;left:50%;transform:translateX(-50%);width:100%;max-width:520px;padding:0 12px">
+  {% if enrolled %}
+    <button class="btn btn-block" disabled style="opacity:.6">✓ 已报名,继续修习</button>
+  {% elif user.is_authenticated %}
+    <form method="post" action="{% url 'h5:enroll_course' course.course_id %}">
+      {% csrf_token %}
+      <button class="btn btn-block">立即报名({{ course.points_cost }} 积分)</button>
+    </form>
+  {% else %}
+    <a href="{% url 'h5:login' %}?next={{ request.path }}" class="btn btn-block">登录后报名</a>
+  {% endif %}
+</div>
+<div style="height:56px"></div>
+{% endblock %}

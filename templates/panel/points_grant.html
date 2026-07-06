@@ -1,0 +1,26 @@
+{% extends "panel/base.html" %}
+{% block title %}积分发放{% endblock %}
+{% block page_header %}积分发放 / 扣减{% endblock %}
+{% block content %}
+<div class="card" style="max-width:520px">
+  <form method="post">
+    {% csrf_token %}
+    <label>目标用户手机号</label>
+    <input type="text" name="phone" value="{{ form.phone.value|default:'' }}" placeholder="请输入完整手机号">
+    {% if form.phone.errors %}<div class="errors">{{ form.phone.errors.0 }}</div>{% endif %}
+    <label>操作类型</label>
+    <select name="direction">
+      <option value="add" {% if form.direction.value == 'add' %}selected{% endif %}>增加积分</option>
+      <option value="sub" {% if form.direction.value == 'sub' %}selected{% endif %}>扣减积分</option>
+    </select>
+    <label>积分数量</label>
+    <input type="number" name="amount" min="1" value="{{ form.amount.value|default:'' }}">
+    {% if form.amount.errors %}<div class="errors">{{ form.amount.errors.0 }}</div>{% endif %}
+    <label>操作原因</label>
+    <input type="text" name="reason" value="{{ form.reason.value|default:'' }}" placeholder="如:活动奖励 / 补偿发放">
+    {% if form.reason.errors %}<div class="errors">{{ form.reason.errors.0 }}</div>{% endif %}
+    <button class="btn">确认操作</button>
+  </form>
+  <p class="muted" style="margin-top:12px">操作将自动写入积分流水、通知用户并记录操作日志。</p>
+</div>
+{% endblock %}

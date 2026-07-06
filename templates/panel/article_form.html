@@ -1,0 +1,22 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if article %}编辑文章{% else %}新建文章{% endif %}{% endblock %}
+{% block page_header %}{% if article %}编辑文章{% else %}新建文章{% endif %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:860px">
+  <form method="post">
+    {% csrf_token %}
+    <label>标题 *</label>{{ form.title }}
+    {% if form.title.errors %}<div class="errors">{{ form.title.errors.0 }}</div>{% endif %}
+    <label>摘要</label>{{ form.summary }}
+    <label>正文</label>{{ form.content }}
+    <div class="form-grid">
+      <div><label>封面图 URL</label>{{ form.cover }}</div>
+      <div><label>作者</label>{{ form.author }}</div>
+      <div><label>公众号原文链接</label>{{ form.source_url }}</div>
+      <div><label>状态 *</label>{{ form.status }}</div>
+    </div>
+    <button class="btn">保存文章</button>
+    <a href="{% url 'panel:article_list' %}" class="btn btn-ghost">取消</a>
+  </form>
+</div>
+{% endblock %}

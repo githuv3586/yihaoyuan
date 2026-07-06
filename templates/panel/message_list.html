@@ -1,0 +1,34 @@
+{% extends "panel/base.html" %}
+{% block title %}消息管理{% endblock %}
+{% block page_header %}消息管理{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex;justify-content:space-between;margin-bottom:14px">
+    <form method="get" class="filter-bar" style="margin-bottom:0">
+      <input type="search" name="q" placeholder="标题 / 手机号" value="{{ keyword }}">
+      <button class="btn">搜索</button>
+    </form>
+    <a href="{% url 'panel:message_send' %}" class="btn">+ 发送消息</a>
+  </div>
+  <table>
+    <tr><th>用户</th><th>类型</th><th>标题</th><th>内容</th><th>已读</th><th>时间</th></tr>
+    {% for msg in page %}
+    <tr>
+      <td>{{ msg.user.display_name }}</td>
+      <td><span class="tag">{{ msg.get_type_display }}</span></td>
+      <td>{{ msg.title }}</td>
+      <td class="muted">{{ msg.content|truncatechars:30 }}</td>
+      <td>{% if msg.is_read %}<span class="tag tag-green">已读</span>{% else %}<span class="tag tag-red">未读</span>{% endif %}</td>
+      <td class="muted">{{ msg.created_at|date:"Y-m-d H:i" }}</td>
+    </tr>
+    {% empty %}<tr><td colspan="6" class="empty">暂无消息</td></tr>{% endfor %}
+  </table>
+  {% if page.has_other_pages %}
+  <div class="pager">
+    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&q={{ keyword }}">上一页</a>{% endif %}
+    <span class="muted">{{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?page={{ page.next_page_number }}&q={{ keyword }}">下一页</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

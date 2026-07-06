@@ -1,0 +1,114 @@
+{% extends "panel/base.html" %}
+{% block title %}数据看板{% endblock %}
+{% block page_header %}数据看板{% endblock %}
+{% block content %}
+<div class="stat-grid">
+  <div class="stat-card"><div class="label">总用户数</div><div class="value">{{ stats.total_users }}</div><div class="muted">今日新增 {{ stats.today_users }}</div></div>
+  <div class="stat-card"><div class="label">总积分余额</div><div class="value">{{ stats.total_points }}</div></div>
+  <div class="stat-card"><div class="label">待审核报单</div><div class="value {% if stats.pending_orders %}warn{% endif %}">{{ stats.pending_orders }}</div></div>
+  <div class="stat-card"><div class="label">VIP 会员数</div><div class="value">{{ stats.vip_users }}</div></div>
+  <div class="stat-card"><div class="label">已上架课程</div><div class="value">{{ stats.published_courses }}</div></div>
+  <div class="stat-card"><div class="label">总报名数</div><div class="value">{{ stats.total_enrollments }}</div></div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px">
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:12px">近 30 天用户增长</div>
+    <canvas id="growthChart" height="220"></canvas>
+  </div>
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:12px">报单状态分布</div>
+    <div id="orderDist"></div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:12px">课程热度 Top 10</div>
+    <table>
+      <tr><th>课程</th><th>报名数</th><th>浏览量</th></tr>
+      {% for course in hot_courses %}
+      <tr><td>{{ course.title }}</td><td>{{ course.enroll_count }}</td><td>{{ course.view_count }}</td></tr>
+      {% empty %}
+      <tr><td colspan="3" class="empty">暂无课程</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  <div class="card">
+    <div style="font-weight:600;margin-bottom:12px">待办事项</div>
+    <div class="muted" style="margin-bottom:6px">待审核报单</div>
+    {% for order in todo.pending_orders %}
+      <div style="padding:6px 0;border-bottom:1px solid var(--line)">
+        <a href="{% url 'panel:order_detail' order.pk %}" style="color:var(--primary)">{{ order.order_id }}</a>
+        <span class="muted">{{ order.get_type_display }} · {{ order.contact_name }}</span>
+      </div>
+    {% empty %}<div class="muted" style="padding:4px 0">无</div>{% endfor %}
+    <div class="muted" style="margin:10px 0 6px">积分兑换待处理</div>
+    {% for exchange in todo.pending_exchanges %}
+      <div style="padding:6px 0;border-bottom:1px solid var(--line)">
+        {{ exchange.user.display_name }} 兑换 {{ exchange.item_title }}
+      </div>
+    {% empty %}<div class="muted" style="padding:4px 0">无</div>{% endfor %}
+    <div class="muted" style="margin:10px 0 6px">VIP 即将到期(3 天内)</div>
+    {% for vip_user in todo.expiring_vips %}
+      <div style="padding:6px 0;border-bottom:1px solid var(--line)">
+        <a href="{% url 'panel:user_detail' vip_user.pk %}" style="color:var(--primary)">{{ vip_user.display_name }}</a>
+        <span class="muted">{{ vip_user.vip_expire_at|date:"m-d H:i" }} 到期</span>
+      </div>
+    {% empty %}<div class="muted" style="padding:4px 0">无</div>{% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block script %}
+<script>
+// 用户增长曲线(原生 canvas 绘制,不依赖外部图表库)
+(function () {
+  const labels = {{ growth_labels|safe }};
+  const values = {{ growth_values|safe }};
+  const canvas = document.getElementById('growthChart');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.parentElement.clientWidth - 36, h = 220;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const pad = {l: 30, r: 10, t: 10, b: 24};
+  const maxV = Math.max(...values, 1);
+  const plotW = w - pad.l - pad.r, plotH = h - pad.t - pad.b;
+  const x = i => pad.l + plotW * i / (values.length - 1 || 1);
+  const y = v => pad.t + plotH * (1 - v / maxV);
+
+  ctx.strokeStyle = '#eee';
+  ctx.fillStyle = '#999'; ctx.font = '10px sans-serif';
+  for (let g = 0; g <= 4; g++) {
+    const gy = pad.t + plotH * g / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(w - pad.r, gy); ctx.stroke();
+    ctx.fillText(Math.round(maxV * (4 - g) / 4), 4, gy + 3);
+  }
+  labels.forEach((lb, i) => { if (i % 5 === 0) ctx.fillText(lb, x(i) - 12, h - 8); });
+
+  ctx.beginPath();
+  values.forEach((v, i) => i === 0 ? ctx.moveTo(x(i), y(v)) : ctx.lineTo(x(i), y(v)));
+  ctx.strokeStyle = '#8b2e1f'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.lineTo(x(values.length - 1), pad.t + plotH); ctx.lineTo(x(0), pad.t + plotH); ctx.closePath();
+  ctx.fillStyle = 'rgba(139,46,31,.08)'; ctx.fill();
+})();
+
+// 报单状态分布(简单条形展示)
+(function () {
+  const data = {{ order_dist|safe }};
+  const total = data.reduce((s, d) => s + d.count, 0);
+  const colors = {'待审核': '#e67e22', '已通过': '#2e7d32', '已拒绝': '#c0392b', '已取消': '#999'};
+  const el = document.getElementById('orderDist');
+  if (!total) { el.innerHTML = '<div class="muted">暂无报单</div>'; return; }
+  el.innerHTML = data.map(d => {
+    const pct = Math.round(d.count / total * 100);
+    const color = colors[d.label] || '#8b2e1f';
+    return '<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px"><span>' +
+      d.label + '</span><span>' + d.count + ' (' + pct + '%)</span></div>' +
+      '<div style="background:#f0ede8;border-radius:5px;height:10px"><div style="width:' + pct +
+      '%;background:' + color + ';height:10px;border-radius:5px"></div></div></div>';
+  }).join('');
+})();
+</script>
+{% endblock %}

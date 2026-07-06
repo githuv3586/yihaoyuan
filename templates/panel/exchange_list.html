@@ -1,0 +1,43 @@
+{% extends "panel/base.html" %}
+{% block title %}兑换记录{% endblock %}
+{% block page_header %}积分兑换记录{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="filter-bar">
+    <select name="status">
+      <option value="">全部状态</option>
+      {% for value, label in statuses %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn">筛选</button>
+  </form>
+  <table>
+    <tr><th>兑换单号</th><th>用户</th><th>商品</th><th>消耗积分</th><th>状态</th><th>时间</th><th>操作</th></tr>
+    {% for exchange in page %}
+    <tr>
+      <td class="muted">{{ exchange.exchange_id }}</td>
+      <td>{{ exchange.user.display_name }}</td>
+      <td>{{ exchange.item_title }}</td>
+      <td>{{ exchange.points_cost }}</td>
+      <td><span class="tag {% if exchange.status == 'submitted' %}tag-red{% elif exchange.status == 'processed' %}tag-green{% endif %}">{{ exchange.get_status_display }}</span></td>
+      <td class="muted">{{ exchange.created_at|date:"Y-m-d H:i" }}</td>
+      <td>
+        {% if exchange.status == 'submitted' %}
+        <form method="post" action="{% url 'panel:exchange_process' exchange.pk %}" style="display:inline">
+          {% csrf_token %}
+          <button name="action" value="process" class="btn btn-sm">标记已处理</button>
+          <button name="action" value="cancel" class="btn btn-sm btn-danger" onclick="return confirm('取消将退还积分,确认?')">取消</button>
+        </form>
+        {% else %}-{% endif %}
+      </td>
+    </tr>
+    {% empty %}<tr><td colspan="7" class="empty">暂无兑换记录</td></tr>{% endfor %}
+  </table>
+  {% if page.has_other_pages %}
+  <div class="pager">
+    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&status={{ status }}">上一页</a>{% endif %}
+    <span class="muted">{{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?page={{ page.next_page_number }}&status={{ status }}">下一页</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

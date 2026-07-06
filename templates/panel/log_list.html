@@ -1,0 +1,40 @@
+{% extends "panel/base.html" %}
+{% block title %}操作日志{% endblock %}
+{% block page_header %}操作日志{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="filter-bar">
+    <input type="search" name="q" placeholder="操作者 / 目标 ID" value="{{ keyword }}">
+    <select name="module">
+      <option value="">全部模块</option>
+      {% for value, label in modules %}<option value="{{ value }}" {% if module == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <select name="action">
+      <option value="">全部操作</option>
+      {% for value, label in actions %}<option value="{{ value }}" {% if action == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn">筛选</button>
+  </form>
+  <table>
+    <tr><th>操作者</th><th>模块</th><th>操作</th><th>目标</th><th>详情</th><th>IP</th><th>时间</th></tr>
+    {% for log in page %}
+    <tr>
+      <td>{{ log.operator_name|default:"-" }}</td>
+      <td><span class="tag tag-blue">{{ log.get_module_display }}</span></td>
+      <td><span class="tag">{{ log.get_action_display }}</span></td>
+      <td class="muted">{{ log.target_type }}{% if log.target_id %} #{{ log.target_id }}{% endif %}</td>
+      <td class="muted">{{ log.detail|truncatechars:50 }}</td>
+      <td class="muted">{{ log.ip|default:"-" }}</td>
+      <td class="muted">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+    </tr>
+    {% empty %}<tr><td colspan="7" class="empty">暂无日志</td></tr>{% endfor %}
+  </table>
+  {% if page.has_other_pages %}
+  <div class="pager">
+    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&q={{ keyword }}&module={{ module }}&action={{ action }}">上一页</a>{% endif %}
+    <span class="muted">{{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?page={{ page.next_page_number }}&q={{ keyword }}&module={{ module }}&action={{ action }}">下一页</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

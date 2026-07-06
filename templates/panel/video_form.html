@@ -1,0 +1,23 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if video %}编辑视频{% else %}新建视频{% endif %}{% endblock %}
+{% block page_header %}{% if video %}编辑视频{% else %}新建视频{% endif %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:720px">
+  <form method="post">
+    {% csrf_token %}
+    <label>标题 *</label>{{ form.title }}
+    {% if form.title.errors %}<div class="errors">{{ form.title.errors.0 }}</div>{% endif %}
+    <label>描述</label>{{ form.desc }}
+    <div class="form-grid">
+      <div><label>频道 *</label>{{ form.channel }}</div>
+      <div><label>时长(如 03:20)</label>{{ form.duration }}</div>
+      <div><label>封面图 URL</label>{{ form.cover }}</div>
+      <div><label>视频地址</label>{{ form.video_url }}</div>
+      <div><label>状态 *</label>{{ form.status }}</div>
+      <div><label>排序权重</label>{{ form.sort_order }}</div>
+    </div>
+    <button class="btn">保存视频</button>
+    <a href="{% url 'panel:video_list' %}" class="btn btn-ghost">取消</a>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "h5/base.html" %}
+{% block title %}我的报单{% endblock %}
+{% block content %}
+<div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+  <span>我的报单</span>
+</div>
+<a href="{% url 'h5:order_create' %}" class="btn btn-block" style="margin-bottom:12px">+ 提交新报单</a>
+
+{% for order in orders %}
+<div class="card">
+  <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+    <span style="font-weight:600">{{ order.get_type_display }}</span>
+    <span class="tag {% if order.status == 'pending' %}tag-red{% endif %}">{{ order.get_status_display }}</span>
+  </div>
+  <div class="muted">{{ order.description|truncatechars:60 }}</div>
+  <div class="muted" style="font-size:12px;margin-top:6px">
+    单号 {{ order.order_id }} · {{ order.created_at|date:"Y-m-d H:i" }}
+  </div>
+  {% if order.review_note %}
+  <div class="muted" style="font-size:12px;margin-top:4px">审核备注:{{ order.review_note }}</div>
+  {% endif %}
+</div>
+{% empty %}
+<div class="empty">暂无报单记录</div>
+{% endfor %}
+{% endblock %}

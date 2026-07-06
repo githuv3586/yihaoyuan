@@ -1,0 +1,22 @@
+{% extends "h5/base.html" %}
+{% block title %}提交报单{% endblock %}
+{% block content %}
+<div class="section-title">提交报单</div>
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+    <label>报单类型</label>
+    {{ form.type }}
+    <label>联系人</label>
+    <input type="text" name="contact_name" value="{{ form.contact_name.value|default:'' }}" placeholder="请填写联系人姓名">
+    {% if form.contact_name.errors %}<div class="errors">{{ form.contact_name.errors.0 }}</div>{% endif %}
+    <label>联系电话</label>
+    <input type="tel" name="phone" value="{{ form.phone.value|default:'' }}" placeholder="请填写联系电话">
+    {% if form.phone.errors %}<div class="errors">{{ form.phone.errors.0 }}</div>{% endif %}
+    <label>需求描述</label>
+    <textarea name="description" rows="4" placeholder="请详细描述你的需求">{{ form.description.value|default:'' }}</textarea>
+    {% if form.description.errors %}<div class="errors">{{ form.description.errors.0 }}</div>{% endif %}
+    <button class="btn btn-block">提交报单</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "panel/base.html" %}
+{% block title %}报单管理{% endblock %}
+{% block page_header %}报单管理{% endblock %}
+{% block content %}
+<div class="card">
+  <form method="get" class="filter-bar">
+    <input type="search" name="q" placeholder="订单号 / 手机号" value="{{ keyword }}">
+    <select name="status">
+      <option value="">全部状态</option>
+      {% for value, label in statuses %}<option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <select name="type">
+      <option value="">全部类型</option>
+      {% for value, label in types %}<option value="{{ value }}" {% if order_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn">筛选</button>
+  </form>
+  <table>
+    <tr><th>订单号</th><th>类型</th><th>联系人</th><th>手机号</th><th>描述</th><th>状态</th><th>提交时间</th><th>操作</th></tr>
+    {% for order in page %}
+    <tr>
+      <td>{{ order.order_id }}</td>
+      <td><span class="tag tag-blue">{{ order.get_type_display }}</span></td>
+      <td>{{ order.contact_name }}</td>
+      <td>{{ order.phone }}</td>
+      <td class="muted">{{ order.description|truncatechars:24 }}</td>
+      <td><span class="tag {% if order.status == 'pending' %}tag-red{% elif order.status == 'approved' %}tag-green{% endif %}">{{ order.get_status_display }}</span></td>
+      <td class="muted">{{ order.created_at|date:"Y-m-d H:i" }}</td>
+      <td><a href="{% url 'panel:order_detail' order.pk %}" class="btn btn-sm btn-ghost">{% if order.status == 'pending' %}审核{% else %}详情{% endif %}</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="8" class="empty">暂无报单</td></tr>{% endfor %}
+  </table>
+  {% if page.has_other_pages %}
+  <div class="pager">
+    {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&q={{ keyword }}&status={{ status }}&type={{ order_type }}">上一页</a>{% endif %}
+    <span class="muted">{{ page.number }} / {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a href="?page={{ page.next_page_number }}&q={{ keyword }}&status={{ status }}&type={{ order_type }}">下一页</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

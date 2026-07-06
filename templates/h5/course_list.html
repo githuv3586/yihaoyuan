@@ -1,0 +1,45 @@
+{% extends "h5/base.html" %}
+{% block title %}武学课堂{% endblock %}
+{% block content %}
+<form method="get" style="display:flex;gap:8px">
+  {% if category %}<input type="hidden" name="category" value="{{ category }}">{% endif %}
+  <input type="search" name="q" placeholder="搜索课程" value="{{ keyword }}">
+  <button class="btn" style="margin-bottom:10px;white-space:nowrap">搜索</button>
+</form>
+
+<div class="pill-nav">
+  <a href="{% url 'h5:course_list' %}" class="{% if not category %}active{% endif %}">全部</a>
+  {% for value, label in categories %}
+    <a href="?category={{ value }}" class="{% if category == value %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% for course in page %}
+<a href="{% url 'h5:course_detail' course.course_id %}" class="card" style="display:flex;gap:12px">
+  {% if course.cover %}
+    <img src="{{ course.cover }}" alt="" style="width:100px;height:75px;object-fit:cover;border-radius:8px;flex-shrink:0">
+  {% else %}
+    <div class="cover" style="width:100px;height:75px;font-size:18px;flex-shrink:0">武</div>
+  {% endif %}
+  <div style="flex:1;min-width:0">
+    <div style="font-weight:600;font-size:15px;margin-bottom:4px">{{ course.title }}</div>
+    <div class="muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ course.desc }}</div>
+    <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center">
+      <span><span class="tag">{{ course.get_category_display }}</span>
+      {% for t in course.tag_list %}<span class="tag tag-red">{{ t }}</span>{% endfor %}</span>
+      <span style="color:var(--primary);font-weight:700;font-size:14px">{{ course.points_cost }} 积分</span>
+    </div>
+  </div>
+</a>
+{% empty %}
+<div class="empty">暂无课程</div>
+{% endfor %}
+
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&category={{ category }}&q={{ keyword }}">上一页</a>{% endif %}
+  <span class="muted">{{ page.number }} / {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}&category={{ category }}&q={{ keyword }}">下一页</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

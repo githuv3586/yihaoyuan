@@ -1,0 +1,26 @@
+{% extends "panel/base.html" %}
+{% block title %}发送消息{% endblock %}
+{% block page_header %}发送消息{% endblock %}
+{% block content %}
+<div class="card" style="max-width:600px">
+  <form method="post">
+    {% csrf_token %}
+    <label>发送对象</label>
+    {{ form.target }}
+    <label>手机号(选择"指定手机号"时填写)</label>
+    {{ form.phone }}
+    {% if form.phone.errors %}<div class="errors">{{ form.phone.errors.0 }}</div>{% endif %}
+    <label>消息类型</label>
+    {{ form.type }}
+    <label>标题 *</label>
+    {{ form.title }}
+    {% if form.title.errors %}<div class="errors">{{ form.title.errors.0 }}</div>{% endif %}
+    <label>内容 *</label>
+    {{ form.content }}
+    {% if form.content.errors %}<div class="errors">{{ form.content.errors.0 }}</div>{% endif %}
+    <label>跳转链接(选填)</label>
+    {{ form.link }}
+    <button class="btn">发送</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "h5/base.html" %}
+{% block title %}个人中心{% endblock %}
+{% block content %}
+<div class="card" style="display:flex;align-items:center;gap:14px">
+  {% if user.avatar %}
+    <img src="{{ user.avatar }}" alt="" style="width:60px;height:60px;border-radius:50%;object-fit:cover">
+  {% else %}
+    <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gold));color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px">武</div>
+  {% endif %}
+  <div>
+    <div style="font-weight:700;font-size:17px">{{ user.display_name }}</div>
+    <div class="muted">{{ user.masked_phone }} · {{ user.get_role_display }}</div>
+    {% if user.is_vip %}
+      <span class="tag tag-red">VIP · 剩余 {{ user.vip_days_left }} 天</span>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid2">
+  <a href="{% url 'h5:points' %}" class="card" style="text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--primary)">{{ user.points }}</div>
+    <div class="muted">积分余额</div>
+  </a>
+  <a href="{% url 'h5:my_enrollments' %}" class="card" style="text-align:center">
+    <div style="font-size:22px;font-weight:700;color:var(--primary)">{{ enroll_count }}</div>
+    <div class="muted">修习课程</div>
+  </a>
+</div>
+
+<div class="card">
+  <a href="{% url 'h5:my_enrollments' %}" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)"><span>📚 修习档案</span><span class="muted">›</span></a>
+  <a href="{% url 'h5:points' %}" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)"><span>💰 积分与兑换</span><span class="muted">›</span></a>
+  <a href="{% url 'h5:order_list' %}" style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)"><span>📋 我的报单</span><span class="muted">›</span></a>
+  <a href="{% url 'h5:message_list' %}" style="display:flex;justify-content:space-between;padding:10px 0"><span>🔔 消息通知{% if unread_count %} <span class="tag tag-red">{{ unread_count }}</span>{% endif %}</span><span class="muted">›</span></a>
+</div>
+
+<div class="section-title">邀请好友</div>
+<div class="card" style="text-align:center">
+  <div class="muted" style="margin-bottom:6px">我的邀请码</div>
+  <div style="font-size:26px;font-weight:700;letter-spacing:4px;color:var(--primary)">{{ user.invite_code }}</div>
+  <div class="muted" style="margin-top:6px;font-size:12px">好友注册时填写邀请码,你可获得 50 积分奖励</div>
+</div>
+
+<div class="section-title">编辑资料</div>
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+    <label>昵称</label>
+    <input type="text" name="nickname" value="{{ user.nickname }}" maxlength="64">
+    <label>头像链接</label>
+    <input type="url" name="avatar" value="{{ user.avatar }}" placeholder="https://...">
+    <button class="btn btn-block">保存资料</button>
+  </form>
+</div>
+
+<a href="{% url 'h5:logout' %}" class="btn btn-ghost btn-block" style="margin-bottom:20px">退出登录</a>
+{% endblock %}

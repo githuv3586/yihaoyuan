@@ -1,0 +1,15 @@
+{% extends "h5/base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h2 style="font-size:19px;margin-bottom:8px">{{ article.title }}</h2>
+  <div class="muted" style="margin-bottom:14px;font-size:12px">
+    {{ article.author|default:"鹿功汇" }} · {{ article.published_at|date:"Y-m-d H:i" }} · {{ article.view_count }} 阅读
+  </div>
+  <div style="line-height:1.9;font-size:15px">{{ article.content|linebreaks }}</div>
+  {% if article.source_url %}
+    <a href="{{ article.source_url }}" class="muted" style="display:block;margin-top:14px">查看公众号原文 →</a>
+  {% endif %}
+</div>
+<a href="{% url 'h5:article_list' %}" class="btn btn-ghost btn-block">返回文章列表</a>
+{% endblock %}

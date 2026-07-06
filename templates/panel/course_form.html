@@ -1,0 +1,33 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if course %}编辑课程{% else %}新建课程{% endif %}{% endblock %}
+{% block page_header %}{% if course %}编辑课程 - {{ course.title }}{% else %}新建课程{% endif %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:860px">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div class="full">
+        <label>课程标题 *</label>{{ form.title }}
+        {% if form.title.errors %}<div class="errors">{{ form.title.errors.0 }}</div>{% endif %}
+      </div>
+      <div><label>分类 *</label>{{ form.category }}
+        {% if form.category.errors %}<div class="errors">{{ form.category.errors.0 }}</div>{% endif %}</div>
+      <div><label>讲师</label>{{ form.teacher }}</div>
+      <div class="full"><label>课程简介</label>{{ form.desc }}</div>
+      <div class="full"><label>课程详情</label>{{ form.content }}</div>
+      <div><label>封面图 URL</label>{{ form.cover }}</div>
+      <div><label>标签(逗号分隔)</label>{{ form.tags }}</div>
+      <div><label>售价(元)*</label>{{ form.price }}
+        {% if form.price.errors %}<div class="errors">{{ form.price.errors.0 }}</div>{% endif %}</div>
+      <div><label>划线价(元)</label>{{ form.original_price }}</div>
+      <div><label>积分价格 *</label>{{ form.points_cost }}
+        {% if form.points_cost.errors %}<div class="errors">{{ form.points_cost.errors.0 }}</div>{% endif %}</div>
+      <div><label>课时数</label>{{ form.lesson_count }}</div>
+      <div><label>排序权重</label>{{ form.sort_order }}</div>
+      <div><label>状态 *</label>{{ form.status }}</div>
+    </div>
+    <button class="btn">保存课程</button>
+    <a href="{% url 'panel:course_list' %}" class="btn btn-ghost">取消</a>
+  </form>
+</div>
+{% endblock %}

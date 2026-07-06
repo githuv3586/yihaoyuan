@@ -1,0 +1,34 @@
+{% extends "h5/base.html" %}
+{% block title %}消息{% endblock %}
+{% block content %}
+<div class="section-title">消息通知</div>
+{% for msg in msgs %}
+<div class="card msg-item {% if not msg.is_read %}unread{% endif %}" data-id="{{ msg.pk }}" style="cursor:pointer">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <span style="font-weight:600">
+      {% if not msg.is_read %}<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--primary);margin-right:6px"></span>{% endif %}
+      {{ msg.title }}
+    </span>
+    <span class="tag">{{ msg.get_type_display }}</span>
+  </div>
+  <div class="muted">{{ msg.content }}</div>
+  <div class="muted" style="font-size:12px;margin-top:6px">{{ msg.created_at|date:"Y-m-d H:i" }}</div>
+</div>
+{% empty %}
+<div class="empty">暂无消息</div>
+{% endfor %}
+{% endblock %}
+{% block script %}
+<script>
+document.querySelectorAll('.msg-item.unread').forEach(el => {
+  el.addEventListener('click', async function () {
+    await fetch('/messages/' + this.dataset.id + '/read/', {
+      method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'},
+    });
+    this.classList.remove('unread');
+    const dot = this.querySelector('span span');
+    if (dot) dot.remove();
+  });
+});
+</script>
+{% endblock %}

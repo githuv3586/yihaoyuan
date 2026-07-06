@@ -1,0 +1,24 @@
+{% extends "panel/base.html" %}
+{% block title %}兑换目录{% endblock %}
+{% block page_header %}积分兑换商品目录{% endblock %}
+{% block content %}
+<div class="card">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+    <a href="{% url 'panel:catalog_create' %}" class="btn">+ 新增商品</a>
+  </div>
+  <table>
+    <tr><th>商品名称</th><th>描述</th><th>所需积分</th><th>VIP 商品</th><th>状态</th><th>排序</th><th>操作</th></tr>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.title }}</td>
+      <td class="muted">{{ item.desc|truncatechars:30 }}</td>
+      <td>{{ item.points_cost }}</td>
+      <td>{% if item.is_vip %}<span class="tag tag-gold">VIP · {{ item.vip_days }} 天</span>{% else %}-{% endif %}</td>
+      <td><span class="tag {% if item.status == 'active' %}tag-green{% else %}tag-red{% endif %}">{{ item.get_status_display }}</span></td>
+      <td>{{ item.sort_order }}</td>
+      <td><a href="{% url 'panel:catalog_edit' item.pk %}" class="btn btn-sm btn-ghost">编辑</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="7" class="empty">暂无兑换商品</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

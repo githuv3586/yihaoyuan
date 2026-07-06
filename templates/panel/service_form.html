@@ -1,0 +1,24 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if service %}编辑服务{% else %}新建服务{% endif %}{% endblock %}
+{% block page_header %}{% if service %}编辑服务 - {{ service.name }}{% else %}新建服务{% endif %}{% endblock %}
+{% block content %}
+<div class="card" style="max-width:720px">
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-grid">
+      <div class="full"><label>服务名称 *</label>{{ form.name }}
+        {% if form.name.errors %}<div class="errors">{{ form.name.errors.0 }}</div>{% endif %}</div>
+      <div class="full"><label>服务描述</label>{{ form.desc }}</div>
+      <div><label>图标 URL</label>{{ form.icon }}</div>
+      <div><label>特性(逗号分隔)</label>{{ form.features }}</div>
+      <div><label>价格(元)*</label>{{ form.price }}</div>
+      <div><label>划线价(元)</label>{{ form.original_price }}</div>
+      <div><label>积分价格 *</label>{{ form.points_cost }}</div>
+      <div><label>排序权重</label>{{ form.sort_order }}</div>
+      <div><label>状态 *</label>{{ form.status }}</div>
+    </div>
+    <button class="btn">保存服务</button>
+    <a href="{% url 'panel:service_list' %}" class="btn btn-ghost">取消</a>
+  </form>
+</div>
+{% endblock %}

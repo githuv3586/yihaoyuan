@@ -1,0 +1,52 @@
+{% extends "h5/base.html" %}
+{% block title %}首页{% endblock %}
+{% block content %}
+<div class="pill-nav">
+  <a href="{% url 'h5:home' %}" class="{% if not channel %}active{% endif %}">全部</a>
+  {% for value, label in channels %}
+    <a href="?channel={{ value }}" class="{% if channel == value %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if videos %}
+<div class="grid2">
+  {% for video in videos %}
+  <div class="card" style="padding:0;overflow:hidden">
+    {% if video.cover %}
+      <img class="cover" style="height:120px" src="{{ video.cover }}" alt="{{ video.title }}">
+    {% else %}
+      <div class="cover" style="height:120px">武</div>
+    {% endif %}
+    <div style="padding:10px">
+      <div style="font-size:14px;font-weight:600;line-height:1.4;margin-bottom:6px">{{ video.title }}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="tag">{{ video.get_channel_display }}</span>
+        <button class="like-btn" data-id="{{ video.id }}" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer">
+          ❤ <span class="like-count">{{ video.like_count }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">暂无视频内容,敬请期待</div>
+{% endif %}
+{% endblock %}
+{% block script %}
+<script>
+document.querySelectorAll('.like-btn').forEach(btn => {
+  btn.addEventListener('click', async function () {
+    {% if user.is_authenticated %}
+    const resp = await fetch('/videos/' + this.dataset.id + '/like/', {
+      method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'},
+    });
+    const data = await resp.json();
+    if (data.ok) this.querySelector('.like-count').textContent = data.like_count;
+    {% else %}
+    location.href = "{% url 'h5:login' %}";
+    {% endif %}
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "h5/base.html" %}
+{% block title %}修习档案{% endblock %}
+{% block content %}
+<div class="section-title">我的修习课程</div>
+{% for enrollment in enrollments %}
+<a href="{% url 'h5:course_detail' enrollment.course.course_id %}" class="card" style="display:flex;justify-content:space-between;align-items:center">
+  <div>
+    <div style="font-weight:600">{{ enrollment.course.title }}</div>
+    <div class="muted">{{ enrollment.course.get_category_display }} · 报名于 {{ enrollment.created_at|date:"Y-m-d" }}</div>
+  </div>
+  <span class="muted">›</span>
+</a>
+{% empty %}
+<div class="empty">还没有报名课程,<a href="{% url 'h5:course_list' %}" style="color:var(--primary)">去武学课堂看看</a></div>
+{% endfor %}
+{% endblock %}
