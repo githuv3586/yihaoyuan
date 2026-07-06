@@ -71,13 +71,7 @@ label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
   {% block content %}{% endblock %}
 </main>
 
-<nav class="tabbar">
-  <a href="{% url 'h5:home' %}" class="{% if active_tab == 'home' or request.resolver_match.url_name == 'home' %}active{% endif %}"><span class="ico">🏮</span>首页</a>
-  <a href="{% url 'h5:course_list' %}" class="{% if 'course' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">🥋</span>武学课堂</a>
-  <a href="{% url 'h5:article_list' %}" class="{% if 'article' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">📜</span>文章</a>
-  <a href="{% url 'h5:message_list' %}" class="{% if 'message' in request.resolver_match.url_name %}active{% endif %}"><span class="ico">🔔</span>消息</a>
-  <a href="{% url 'h5:profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}"><span class="ico">👤</span>我的</a>
-</nav>
+{% include "h5/_tabbar.html" %}
 {% block script %}{% endblock %}
 </body>
 </html>

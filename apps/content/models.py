@@ -19,6 +19,7 @@ class Article(models.Model):
         "状态", max_length=10, choices=Status.choices, default=Status.PUBLISHED
     )
     view_count = models.PositiveIntegerField("阅读量", default=0)
+    like_count = models.PositiveIntegerField("点赞数", default=0)
     published_at = models.DateTimeField("发布时间", null=True, blank=True)
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)

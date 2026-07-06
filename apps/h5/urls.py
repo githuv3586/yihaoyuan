@@ -17,6 +17,7 @@ urlpatterns = [
     path("my/enrollments/", views.my_enrollments, name="my_enrollments"),
     path("articles/", views.article_list, name="article_list"),
     path("articles/<int:pk>/", views.article_detail, name="article_detail"),
+    path("articles/<int:pk>/like/", views.like_article, name="like_article"),
     path("orders/", views.order_list, name="order_list"),
     path("orders/new/", views.order_create, name="order_create"),
     path("points/", views.points_home, name="points"),

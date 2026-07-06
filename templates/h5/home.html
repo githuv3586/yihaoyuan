@@ -1,52 +1,183 @@
-{% extends "h5/base.html" %}
-{% block title %}首页{% endblock %}
-{% block content %}
-<div class="pill-nav">
-  <a href="{% url 'h5:home' %}" class="{% if not channel %}active{% endif %}">全部</a>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>首页 - 鹿功汇</title>
+<style>
+:root{--primary:#8b2e1f;--gold:#c9a45c}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#000;color:#fff;max-width:520px;margin:0 auto;overflow:hidden}
+a{color:inherit;text-decoration:none}
+
+/* 顶部悬浮频道 tab(视频号式) */
+.channel-bar{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;z-index:30;display:flex;justify-content:center;gap:26px;padding:14px 0 10px;background:linear-gradient(rgba(0,0,0,.55),transparent)}
+.channel-bar a{font-size:16px;color:rgba(255,255,255,.65);position:relative;padding-bottom:6px}
+.channel-bar a.active{color:#fff;font-weight:700}
+.channel-bar a.active::after{content:"";position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:22px;height:3px;border-radius:2px;background:var(--gold)}
+
+/* 全屏纵向滑动 feed */
+.feed{height:100dvh;overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch}
+.feed::-webkit-scrollbar{display:none}
+.feed-item{position:relative;height:100dvh;scroll-snap-align:start;scroll-snap-stop:always;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.feed-item video{width:100%;height:100%;object-fit:contain;background:#000}
+.feed-item .poster{width:100%;height:100%;object-fit:cover;filter:brightness(.72)}
+.feed-item .poster-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:64px;letter-spacing:16px;color:rgba(255,255,255,.28);background:radial-gradient(circle at 30% 20%,#4a3226,#1c1512 70%)}
+
+/* 底部信息区(渐变遮罩) */
+.info{position:absolute;left:0;right:64px;bottom:0;padding:18px 16px 76px;background:linear-gradient(transparent,rgba(0,0,0,.72));z-index:5}
+.info .author{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.info .author .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gold));display:flex;align-items:center;justify-content:center;font-size:15px;border:2px solid rgba(255,255,255,.85)}
+.info .author .name{font-size:15px;font-weight:700}
+.info .author .channel-tag{font-size:11px;padding:2px 8px;border-radius:9px;background:rgba(255,255,255,.18);color:rgba(255,255,255,.9)}
+.info .title{font-size:15px;line-height:1.5;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.info .desc{font-size:13px;color:rgba(255,255,255,.72);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* 右侧操作栏(视频号式) */
+.actions{position:absolute;right:10px;bottom:96px;display:flex;flex-direction:column;align-items:center;gap:22px;z-index:6}
+.actions .act{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:#fff;cursor:pointer;font-family:inherit}
+.actions .act .ic{font-size:30px;line-height:1;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));transition:transform .15s}
+.actions .act:active .ic{transform:scale(1.28)}
+.actions .act .num{font-size:12px;color:rgba(255,255,255,.92);text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.actions .act.liked .ic{color:#ff4757}
+
+/* 播放按钮提示 */
+.play-hint{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:56px;opacity:.75;z-index:4;pointer-events:none;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+
+.empty-feed{height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.55);gap:10px}
+
+/* 深色半透明 tabbar */
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;background:rgba(12,10,9,.86);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,.08);display:flex;z-index:40}
+.tabbar a{flex:1;text-align:center;padding:9px 0 7px;font-size:11px;color:rgba(255,255,255,.55)}
+.tabbar a.active{color:#fff;font-weight:600}
+.tabbar .ico{display:block;font-size:20px;line-height:1.2}
+</style>
+</head>
+<body>
+<div class="channel-bar">
+  <a href="{% url 'h5:home' %}" class="{% if not channel %}active{% endif %}">推荐</a>
   {% for value, label in channels %}
     <a href="?channel={{ value }}" class="{% if channel == value %}active{% endif %}">{{ label }}</a>
   {% endfor %}
 </div>
 
 {% if videos %}
-<div class="grid2">
+<div class="feed" id="feed">
   {% for video in videos %}
-  <div class="card" style="padding:0;overflow:hidden">
-    {% if video.cover %}
-      <img class="cover" style="height:120px" src="{{ video.cover }}" alt="{{ video.title }}">
+  <section class="feed-item" data-id="{{ video.id }}">
+    {% if video.video_url %}
+      <video src="{{ video.video_url }}" loop muted playsinline preload="metadata"
+             {% if video.cover %}poster="{{ video.cover }}"{% endif %}></video>
+      <div class="play-hint">▶</div>
+    {% elif video.cover %}
+      <img class="poster" src="{{ video.cover }}" alt="{{ video.title }}">
     {% else %}
-      <div class="cover" style="height:120px">武</div>
+      <div class="poster-fallback">武学</div>
     {% endif %}
-    <div style="padding:10px">
-      <div style="font-size:14px;font-weight:600;line-height:1.4;margin-bottom:6px">{{ video.title }}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <span class="tag">{{ video.get_channel_display }}</span>
-        <button class="like-btn" data-id="{{ video.id }}" style="background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer">
-          ❤ <span class="like-count">{{ video.like_count }}</span>
-        </button>
+
+    <div class="info">
+      <div class="author">
+        <span class="avatar">武</span>
+        <span class="name">鹿功汇</span>
+        <span class="channel-tag">{{ video.get_channel_display }}</span>
       </div>
+      <div class="title">{{ video.title }}</div>
+      {% if video.desc %}<div class="desc">{{ video.desc }}</div>{% endif %}
     </div>
-  </div>
+
+    <div class="actions">
+      <button class="act like-btn" data-id="{{ video.id }}">
+        <span class="ic">♥</span>
+        <span class="num like-count">{{ video.like_count }}</span>
+      </button>
+      <div class="act">
+        <span class="ic">▶</span>
+        <span class="num">{{ video.view_count }}</span>
+      </div>
+      <button class="act share-btn">
+        <span class="ic">↗</span>
+        <span class="num">分享</span>
+      </button>
+    </div>
+  </section>
   {% endfor %}
 </div>
 {% else %}
-<div class="empty">暂无视频内容,敬请期待</div>
+<div class="empty-feed">
+  <div style="font-size:44px">🏮</div>
+  <div>暂无视频内容,敬请期待</div>
+</div>
 {% endif %}
-{% endblock %}
-{% block script %}
+
+{% include "h5/_tabbar.html" %}
+
 <script>
+// 点赞(视频号式红心)
 document.querySelectorAll('.like-btn').forEach(btn => {
-  btn.addEventListener('click', async function () {
+  btn.addEventListener('click', async function (e) {
+    e.stopPropagation();
     {% if user.is_authenticated %}
+    if (this.classList.contains('liked')) return;
     const resp = await fetch('/videos/' + this.dataset.id + '/like/', {
       method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'},
     });
     const data = await resp.json();
-    if (data.ok) this.querySelector('.like-count').textContent = data.like_count;
+    if (data.ok) {
+      this.querySelector('.like-count').textContent = data.like_count;
+      this.classList.add('liked');
+    }
     {% else %}
     location.href = "{% url 'h5:login' %}";
     {% endif %}
   });
 });
+
+// 分享:复制当前页链接
+document.querySelectorAll('.share-btn').forEach(btn => {
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (navigator.share) {
+      navigator.share({title: '鹿功汇 · 传承武学', url: location.href});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(location.href);
+      this.querySelector('.num').textContent = '已复制';
+    }
+  });
+});
+
+// 滑入自动播放当前视频,滑出暂停(视频号式)
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    const video = entry.target.querySelector('video');
+    const hint = entry.target.querySelector('.play-hint');
+    if (!video) return;
+    if (entry.isIntersecting && entry.intersectionRatio > 0.6) {
+      video.play().then(() => { if (hint) hint.style.display = 'none'; }).catch(() => {});
+    } else {
+      video.pause();
+      if (hint) hint.style.display = '';
+    }
+  });
+}, {threshold: [0, 0.6, 1]});
+document.querySelectorAll('.feed-item').forEach(item => observer.observe(item));
+
+// 点击视频切换播放/暂停
+document.querySelectorAll('.feed-item').forEach(item => {
+  const video = item.querySelector('video');
+  const hint = item.querySelector('.play-hint');
+  if (!video) return;
+  item.addEventListener('click', () => {
+    if (video.paused) {
+      video.muted = false;
+      video.play().catch(() => {});
+      if (hint) hint.style.display = 'none';
+    } else {
+      video.pause();
+      if (hint) hint.style.display = '';
+    }
+  });
+});
 </script>
-{% endblock %}
+</body>
+</html>

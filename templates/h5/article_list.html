@@ -1,25 +1,65 @@
 {% extends "h5/base.html" %}
-{% block title %}武学文章{% endblock %}
+{% block title %}图文{% endblock %}
+{% block style %}
+<style>
+/* 小红书式双列瀑布流 */
+.search-bar{display:flex;gap:8px;margin-bottom:10px}
+.search-bar input{flex:1;border-radius:18px;background:#efece6;border:none;margin-bottom:0;padding:9px 16px}
+.search-bar button{border:none;background:none;color:var(--primary);font-size:14px;cursor:pointer;white-space:nowrap}
+.waterfall{column-count:2;column-gap:9px}
+.note-card{break-inside:avoid;margin-bottom:9px;background:#fff;border-radius:10px;overflow:hidden;display:block;box-shadow:0 1px 3px rgba(43,36,32,.06)}
+.note-card .note-cover{width:100%;display:block}
+.note-card .cover-text{width:100%;display:flex;align-items:center;justify-content:center;padding:26px 14px;color:#fff;font-size:17px;font-weight:700;line-height:1.6;text-align:center;letter-spacing:1px}
+.cv0{background:linear-gradient(150deg,#8b2e1f,#c9a45c);min-height:150px}
+.cv1{background:linear-gradient(150deg,#2f4b3f,#7ba088);min-height:190px}
+.cv2{background:linear-gradient(150deg,#3a3f5c,#8891bd);min-height:170px}
+.cv3{background:linear-gradient(150deg,#6e4a20,#d0a35c);min-height:210px}
+.note-card .note-body{padding:9px 10px 10px}
+.note-card .note-title{font-size:14px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px;color:var(--text)}
+.note-card .note-meta{display:flex;align-items:center;justify-content:space-between}
+.note-card .note-author{display:flex;align-items:center;gap:5px;min-width:0}
+.note-card .note-author .mini-avatar{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gold));color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.note-card .note-author .aname{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note-card .note-like{display:flex;align-items:center;gap:3px;font-size:11px;color:var(--muted);flex-shrink:0}
+</style>
+{% endblock %}
 {% block content %}
-<div class="section-title">武学资讯</div>
-{% for article in page %}
-<a href="{% url 'h5:article_detail' article.pk %}" class="card" style="display:block">
-  <div style="font-weight:600;font-size:15px;margin-bottom:6px">{{ article.title }}</div>
-  {% if article.summary %}<div class="muted" style="margin-bottom:6px">{{ article.summary }}</div>{% endif %}
-  <div class="muted" style="display:flex;justify-content:space-between;font-size:12px">
-    <span>{{ article.author|default:"鹿功汇" }}</span>
-    <span>{{ article.published_at|date:"Y-m-d" }} · {{ article.view_count }} 阅读</span>
-  </div>
-</a>
-{% empty %}
-<div class="empty">暂无文章</div>
-{% endfor %}
+<form method="get" class="search-bar">
+  <input type="search" name="q" placeholder="搜索武学图文" value="{{ keyword }}">
+  <button type="submit">搜索</button>
+</form>
+
+{% if page %}
+<div class="waterfall">
+  {% for article in page %}
+  <a href="{% url 'h5:article_detail' article.pk %}" class="note-card">
+    {% if article.cover %}
+      <img class="note-cover" src="{{ article.cover }}" alt="{{ article.title }}" loading="lazy">
+    {% else %}
+      <div class="cover-text cv{% cycle '0' '1' '2' '3' %}">{{ article.title|truncatechars:24 }}</div>
+    {% endif %}
+    <div class="note-body">
+      <div class="note-title">{{ article.title }}</div>
+      <div class="note-meta">
+        <span class="note-author">
+          <span class="mini-avatar">{{ article.author|default:"鹿"|first }}</span>
+          <span class="aname">{{ article.author|default:"鹿功汇" }}</span>
+        </span>
+        <span class="note-like">♥ {{ article.like_count }}</span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">暂无图文内容</div>
+{% endif %}
 
 {% if page.has_other_pages %}
 <div class="pager">
-  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}">上一页</a>{% endif %}
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&q={{ keyword }}">上一页</a>{% endif %}
   <span class="muted">{{ page.number }} / {{ page.paginator.num_pages }}</span>
-  {% if page.has_next %}<a href="?page={{ page.next_page_number }}">下一页</a>{% endif %}
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}&q={{ keyword }}">下一页</a>{% endif %}
 </div>
 {% endif %}
 {% endblock %}

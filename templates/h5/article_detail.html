@@ -1,15 +1,78 @@
 {% extends "h5/base.html" %}
 {% block title %}{{ article.title }}{% endblock %}
+{% block style %}
+<style>
+/* 小红书式图文详情 */
+.note-hero{margin:-12px -12px 0;position:relative}
+.note-hero img{width:100%;display:block}
+.note-hero .hero-text{width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;padding:40px 24px;background:linear-gradient(150deg,#8b2e1f,#c9a45c);color:#fff;font-size:22px;font-weight:700;line-height:1.7;text-align:center;letter-spacing:2px}
+.note-author-bar{display:flex;align-items:center;gap:10px;padding:14px 2px}
+.note-author-bar .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--gold));color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.note-author-bar .who{flex:1;min-width:0}
+.note-author-bar .who .nm{font-size:14px;font-weight:600}
+.note-author-bar .who .tm{font-size:11px;color:var(--muted)}
+.follow-tag{font-size:12px;color:var(--primary);border:1px solid var(--primary);border-radius:14px;padding:4px 14px}
+.note-content{background:#fff;border-radius:12px;padding:16px 14px;line-height:1.95;font-size:15px}
+.note-content h2.nt{font-size:19px;line-height:1.5;margin-bottom:10px}
+.note-foot{display:flex;align-items:center;gap:18px;padding:14px 4px;color:var(--muted);font-size:13px}
+.note-foot .like-article{display:flex;align-items:center;gap:5px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;font-family:inherit}
+.note-foot .like-article .hh{font-size:20px;transition:transform .15s}
+.note-foot .like-article:active .hh{transform:scale(1.3)}
+.note-foot .like-article.liked{color:#ff4757}
+</style>
+{% endblock %}
 {% block content %}
-<div class="card">
-  <h2 style="font-size:19px;margin-bottom:8px">{{ article.title }}</h2>
-  <div class="muted" style="margin-bottom:14px;font-size:12px">
-    {{ article.author|default:"鹿功汇" }} · {{ article.published_at|date:"Y-m-d H:i" }} · {{ article.view_count }} 阅读
-  </div>
-  <div style="line-height:1.9;font-size:15px">{{ article.content|linebreaks }}</div>
-  {% if article.source_url %}
-    <a href="{{ article.source_url }}" class="muted" style="display:block;margin-top:14px">查看公众号原文 →</a>
+<div class="note-hero">
+  {% if article.cover %}
+    <img src="{{ article.cover }}" alt="{{ article.title }}">
+  {% else %}
+    <div class="hero-text">{{ article.title }}</div>
   {% endif %}
 </div>
-<a href="{% url 'h5:article_list' %}" class="btn btn-ghost btn-block">返回文章列表</a>
+
+<div class="note-author-bar">
+  <span class="avatar">{{ article.author|default:"鹿"|first }}</span>
+  <span class="who">
+    <div class="nm">{{ article.author|default:"鹿功汇" }}</div>
+    <div class="tm">{{ article.published_at|date:"Y-m-d" }} · {{ article.view_count }} 浏览</div>
+  </span>
+  <span class="follow-tag">武学号</span>
+</div>
+
+<div class="note-content">
+  <h2 class="nt">{{ article.title }}</h2>
+  {% if article.summary %}<p class="muted" style="margin-bottom:10px">{{ article.summary }}</p>{% endif %}
+  {{ article.content|linebreaks }}
+  {% if article.source_url %}
+    <a href="{{ article.source_url }}" class="muted" style="display:block;margin-top:12px">查看公众号原文 →</a>
+  {% endif %}
+</div>
+
+<div class="note-foot">
+  <button class="like-article" data-id="{{ article.pk }}">
+    <span class="hh">♥</span>
+    <span class="like-count">{{ article.like_count }}</span> 赞
+  </button>
+  <span>👁 {{ article.view_count }} 浏览</span>
+  <a href="{% url 'h5:article_list' %}" style="margin-left:auto;color:var(--primary)">更多图文 ›</a>
+</div>
+{% endblock %}
+{% block script %}
+<script>
+document.querySelector('.like-article').addEventListener('click', async function () {
+  {% if user.is_authenticated %}
+  if (this.classList.contains('liked')) return;
+  const resp = await fetch('/articles/' + this.dataset.id + '/like/', {
+    method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'},
+  });
+  const data = await resp.json();
+  if (data.ok) {
+    this.querySelector('.like-count').textContent = data.like_count;
+    this.classList.add('liked');
+  }
+  {% else %}
+  location.href = "{% url 'h5:login' %}?next={{ request.path }}";
+  {% endif %}
+});
+</script>
 {% endblock %}

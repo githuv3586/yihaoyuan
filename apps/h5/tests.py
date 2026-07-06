@@ -144,6 +144,25 @@ class ContentTests(TestCase):
         article.refresh_from_db()
         self.assertEqual(article.view_count, 1)
 
+    def test_like_article_requires_login_and_increments(self):
+        article = Article.objects.create(
+            title="武学文章", status=Article.Status.PUBLISHED
+        )
+        resp = self.client.post(reverse("h5:like_article", args=[article.pk]))
+        self.assertEqual(resp.status_code, 302)
+
+        user = User.objects.create_user(phone="13800006666")
+        self.client.force_login(user)
+        resp = self.client.post(reverse("h5:like_article", args=[article.pk]))
+        self.assertEqual(resp.json()["like_count"], 1)
+
+    def test_article_list_search(self):
+        Article.objects.create(title="太极心得", status=Article.Status.PUBLISHED)
+        Article.objects.create(title="八卦掌笔记", status=Article.Status.PUBLISHED)
+        resp = self.client.get(reverse("h5:article_list"), {"q": "太极"})
+        self.assertContains(resp, "太极心得")
+        self.assertNotContains(resp, "八卦掌笔记")
+
 
 class OrderTests(TestCase):
     def setUp(self):

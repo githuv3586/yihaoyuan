@@ -252,16 +252,31 @@ def my_enrollments(request):
 
 
 def article_list(request):
+    keyword = request.GET.get("q", "").strip()
     articles = Article.objects.filter(status=Article.Status.PUBLISHED)
-    paginator = Paginator(articles, 10)
+    if keyword:
+        articles = articles.filter(
+            Q(title__icontains=keyword) | Q(summary__icontains=keyword)
+        )
+    paginator = Paginator(articles, 20)
     page = paginator.get_page(request.GET.get("page"))
-    return render(request, "h5/article_list.html", {"page": page})
+    return render(request, "h5/article_list.html", {"page": page, "keyword": keyword})
 
 
 def article_detail(request, pk):
     article = get_object_or_404(Article, pk=pk, status=Article.Status.PUBLISHED)
     Article.objects.filter(pk=pk).update(view_count=F("view_count") + 1)
     return render(request, "h5/article_detail.html", {"article": article})
+
+
+@require_POST
+@login_required
+def like_article(request, pk):
+    updated = Article.objects.filter(pk=pk).update(like_count=F("like_count") + 1)
+    if not updated:
+        return JsonResponse({"ok": False}, status=404)
+    article = Article.objects.get(pk=pk)
+    return JsonResponse({"ok": True, "like_count": article.like_count})
 
 
 # ---------- 报单 ----------
