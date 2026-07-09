@@ -1,0 +1,5 @@
+buttons:
+  - name: 启动静态预览
+    desc: 一键预览 opc.hejinhong.site 静态站
+    icon: 🚀
+    run: $

@@ -1,0 +1,85 @@
+# opc.so — CNB CI/CD
+# push 到 main：校验 → 部署静态站到 COS → 刷新 CDN（opc.hejinhong.site）
+#
+# 密钥通过密钥仓库 imports 注入（不要写进本文件）：
+#   TENCENTCLOUD_SECRET_ID / TENCENTCLOUD_SECRET_KEY
+# 详见 docs/cicd-cos.md 与 secrets/cos-deploy.example.yml
+
+main:
+  push:
+    - name: deploy-to-cos
+      docker:
+        image: python:3.12-slim
+      env:
+        COS_BUCKET: opc-site-1256908292
+        COS_REGION: ap-guangzhou
+        CDN_DOMAIN: opc.hejinhong.site
+      # 创建密钥仓后，确认此 URL 指向真实的 cos-deploy.yml
+      imports:
+        - https://cnb.cool/zhanxiaoyu/opc-so-secrets/-/blob/main/cos-deploy.yml
+      stages:
+        - name: install-tools
+          script: |
+            set -eu
+            apt-get update -qq
+            apt-get install -y -qq --no-install-recommends ca-certificates curl
+            pip install -q --no-cache-dir cos-python-sdk-v5 tencentcloud-sdk-python-cdn
+            python -V
+
+        - name: verify
+          script: |
+            set -eu
+            chmod +x scripts/ci_verify.sh scripts/deploy_cos.py
+            sh scripts/ci_verify.sh
+
+        - name: deploy-cos-cdn
+          script: |
+            set -eu
+            : "${TENCENTCLOUD_SECRET_ID:?缺少 TENCENTCLOUD_SECRET_ID（请配置密钥仓库 imports）}"
+            : "${TENCENTCLOUD_SECRET_KEY:?缺少 TENCENTCLOUD_SECRET_KEY（请配置密钥仓库 imports）}"
+            echo "Deploying commit=${CNB_COMMIT:-unknown} branch=${CNB_BRANCH:-unknown}"
+            echo "Target https://${CDN_DOMAIN}/ bucket=${COS_BUCKET} region=${COS_REGION}"
+            python3 scripts/deploy_cos.py
+
+        - name: deploy-summary
+          script: |
+            set -eu
+            echo "========================================="
+            echo "  ✔ 已部署到 https://${CDN_DOMAIN}/"
+            echo "  Branch : ${CNB_BRANCH:-}"
+            echo "  Commit : ${CNB_COMMIT:-}"
+            echo "  Bucket : ${COS_BUCKET}"
+            echo "========================================="
+
+  web_trigger:
+    - name: verify-only
+      docker:
+        image: python:3.12-slim
+      stages:
+        - name: verify
+          script: |
+            set -eu
+            chmod +x scripts/ci_verify.sh scripts/deploy_cos.py
+            sh scripts/ci_verify.sh
+
+# 云开发预览：静态 HTTP（不依赖 CNB_TOKEN）
+$:
+  vscode:
+    - docker:
+        image: python:3.12-slim
+      services:
+        - name: vscode
+          options:
+            onlyPreview: true
+            launch: |
+              sh -c '
+                cd /workspace 2>/dev/null || cd /home/workspace 2>/dev/null || cd .
+                echo "=== 静态预览 http://0.0.0.0:8686 ==="
+                python3 -m http.server 8686
+              '
+            keepAliveTimeout: 3600000
+      stages:
+        - name: check-env
+          script: |
+            echo "Preview environment ready"
+            ls -la
